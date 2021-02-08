@@ -78,6 +78,8 @@ func postNewPost(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
+//go:generate go run github.com/prisma/prisma-client-go generate
+
 func main() {
 	e := echo.New()
 
