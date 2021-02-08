@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"voter/prisma/db"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -25,11 +26,15 @@ func main() {
 
 	// Echo
 	e := echo.New()
+	e.Use(middleware.Logger())
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 
+	e.GET("/post", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Hello, Post!")
+	})
 
 	e.GET("/post/:id", func(c echo.Context) error {
 		id := c.Param("id")
