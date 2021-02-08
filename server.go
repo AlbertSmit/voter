@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strconv"
 	"net/http"
 	"encoding/json"
 	"voter/prisma/db"
@@ -37,7 +38,7 @@ func main() {
 	})
 
 	e.GET("/post/:id", func(c echo.Context) error {
-		id := c.Param("id")
+		id, _ := strconv.Atoi(c.Param("id"))
 
 		post, err := client.Post.FindUnique(
 			db.Post.ID.Equals(id),
