@@ -1,4 +1,4 @@
-## Work in progress.
+## Experiment / Work in progress.
 
 Aiming for:
 
