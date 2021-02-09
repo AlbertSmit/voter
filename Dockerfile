@@ -38,14 +38,8 @@ RUN go build -o /main .
 
 # CMD ./main
 
-# Move to /dist directory as the place for resulting binary folder
-WORKDIR /dist
-
-# Copy binary from build to main folder
-RUN cp /app/server/main .
-
 # Export necessary port
 EXPOSE 8080
 
 # Command to run when starting the container
-CMD ["/dist/main"]
+CMD ["/app/server/main"]
