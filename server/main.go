@@ -88,6 +88,7 @@ func main() {
 
 	e := echo.New()
 
+	e.Static("/", "../client/build")
 	e.Use(middleware.Logger())
 
 	e.GET("/ws", getWS)
