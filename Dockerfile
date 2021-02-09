@@ -1,10 +1,13 @@
+# see https://github.com/deanbaker/react-go-heroku/blob/master/Dockerfile
+# and https://github.com/prisma/prisma-client-go/blob/master/docs/deploy.md#set-up-go-generate
+
 # Build the Go API
 FROM golang:latest AS builder
 ADD . /app
 WORKDIR /app/server
 
 # add go modules lockfiles
-COPY go.mod go.sum ./
+# COPY go.mod go.sum ./
 RUN go mod download
 
 # prefetch the binaries, so that they will be cached and not downloaded on each change
@@ -16,7 +19,7 @@ COPY . ./
 RUN go run github.com/prisma/prisma-client-go generate
 
 # build the binary with all dependencies
-# RUN go build -o /main .
+RUN go build -o /main .
 
 # Build the Svelte application
 # FROM node:14.15-alpine3.12 AS node_builder
