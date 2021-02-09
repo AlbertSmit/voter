@@ -4,16 +4,20 @@
 # Build the Go API
 FROM golang:latest AS builder
 ADD . /app
-WORKDIR /app/server
+# WORKDIR /app/server
+
+# Move to working directory /build
+WORKDIR /build
 
 # add go modules lockfiles
-# COPY go.mod go.sum ./
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
 # prefetch the binaries, so that they will be cached and not downloaded on each change
 RUN go run github.com/prisma/prisma-client-go prefetch
 
-COPY . ./
+COPY . .
 
 # generate the Prisma Client Go client
 RUN go generate ./...
@@ -29,10 +33,23 @@ RUN go build -o /main .
 
 # Final stage build, this will be the container
 # that we will deploy to production
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-COPY --from=builder /main ./
+# FROM alpine:latest
+# RUN apk --no-cache add ca-certificates
+# COPY --from=builder /main ./
 # COPY --from=node_builder /build ./web
-RUN chmod +x ./main
+# RUN chmod +x ./main
+# EXPOSE 8080
+
+# CMD ./main
+
+# Move to /dist directory as the place for resulting binary folder
+WORKDIR /dist
+
+# Copy binary from build to main folder
+RUN cp /build/main .
+
+# Export necessary port
 EXPOSE 8080
-CMD ./main
+
+# Command to run when starting the container
+CMD ["/dist/main"]
