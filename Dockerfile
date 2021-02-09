@@ -16,7 +16,7 @@ RUN go run github.com/prisma/prisma-client-go prefetch
 COPY . ./
 
 # generate the Prisma Client Go client
-RUN go run github.com/prisma/prisma-client-go generate
+RUN go generate ./...
 
 # build the binary with all dependencies
 RUN go build -o /main .
