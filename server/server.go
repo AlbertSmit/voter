@@ -2,17 +2,40 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"voter/prisma/db"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/net/websocket"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
+
+func getWS(c echo.Context) error {
+	websocket.Handler(func(ws *websocket.Conn) {
+		defer ws.Close()
+		for {
+			// Write
+			err := websocket.Message.Send(ws, "Hello, Client!")
+			if err != nil {
+				c.Logger().Error(err)
+			}
+
+			// Read
+			msg := ""
+			err = websocket.Message.Receive(ws, &msg)
+			if err != nil {
+				c.Logger().Error(err)
+			}
+			fmt.Printf("%s\n", msg)
+		}
+	}).ServeHTTP(c.Response(), c.Request())
+	return nil
+}
 
 func getSinglePost(c echo.Context) error {
 	client := db.NewClient()
@@ -31,8 +54,7 @@ func getSinglePost(c echo.Context) error {
 			return err
 	}
 
-	result, _ := json.MarshalIndent(post, "", "  ")
-	return c.JSON(http.StatusOK, result)
+	return c.JSONPretty(http.StatusOK, post, "")
 }
 
 func postNewPost(c echo.Context) error {
@@ -53,8 +75,7 @@ func postNewPost(c echo.Context) error {
 		return err
 	}
 
-	result, _ := json.MarshalIndent(createdPost, "", "  ")
-	return c.JSON(http.StatusOK, result)
+	return c.JSONPretty(http.StatusOK, createdPost, " ")
 }
 
 func main() {
@@ -67,6 +88,7 @@ func main() {
 
 	e.Use(middleware.Logger())
 
+	e.GET("/ws", getWS)
 	e.POST("/post", postNewPost)
 	e.GET("/post/:id", getSinglePost)
 

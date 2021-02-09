@@ -4,3 +4,7 @@ dist/
 
 .DS_Store
 /vendor/
+
+*_gen.go
+
+.env
