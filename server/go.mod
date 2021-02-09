@@ -3,7 +3,6 @@ module voter
 // +heroku goVersion go1.15
 go 1.15
 
-// +heroku install ./prisma-client
 require (
 	github.com/joho/godotenv v1.3.0
 	github.com/labstack/echo/v4 v4.1.17
