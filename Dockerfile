@@ -4,10 +4,7 @@
 # Build the Go API
 FROM golang:latest AS builder
 ADD . /app
-# WORKDIR /app/server
-
-# Move to working directory /build
-WORKDIR /build
+WORKDIR /app/server
 
 # add go modules lockfiles
 # COPY go.mod go.sum ./
@@ -45,7 +42,7 @@ RUN go build -o /main .
 WORKDIR /dist
 
 # Copy binary from build to main folder
-RUN cp /build/main .
+RUN cp /app/server/main .
 
 # Export necessary port
 EXPOSE 8080
