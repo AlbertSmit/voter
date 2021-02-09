@@ -10,8 +10,7 @@ ADD . /app
 WORKDIR /build
 
 # add go modules lockfiles
-COPY go.mod .
-COPY go.sum .
+# COPY go.mod go.sum ./
 RUN go mod download
 
 # prefetch the binaries, so that they will be cached and not downloaded on each change
