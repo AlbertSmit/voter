@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
-	db "github.com/albertsmit/voter/prisma-client"
+	db "github.com/albertsmit/voter/server/prisma-client"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/net/websocket"
