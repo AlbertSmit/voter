@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	db "github.com/albertsmit/voter/server/prisma-client"
+	uuid "github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
 	"github.com/joho/godotenv"
@@ -92,6 +93,11 @@ func postNewPost(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, createdPost, " ")
 }
 
+func createNewRoom(c echo.Context) error {
+	uuid := uuid.New().String()
+	return c.JSONPretty(http.StatusOK, uuid, " ")
+}
+
 func main() {
 	if os.Getenv("APP_ENV") != "production" {
 		err := godotenv.Load()
@@ -114,6 +120,8 @@ func main() {
 	e.GET("/ws", getWS)
 	e.POST("/post", postNewPost)
 	e.GET("/post/:id", getSinglePost)
+
+	e.POST("/room", createNewRoom)
 
 	port := os.Getenv("PORT")
 	if port == "" {
