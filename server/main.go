@@ -99,5 +99,10 @@ func main() {
 	e.POST("/post", postNewPost)
 	e.GET("/post/:id", getSinglePost)
 
-	e.Logger.Fatal(e.Start(":1323"))
+	port := os.Getenv("PORT")
+	if port == "" {
+			log.Fatal("$PORT must be set")
+	}
+
+	e.Logger.Fatal(e.Start(":" + port))
 }
