@@ -25,20 +25,20 @@ COPY . .
 RUN go generate ./...
 
 # build the binary with all dependencies
-RUN go build -ldflags "-w" -a -o /main .
+RUN go build -o /main .
 
 # Build the Svelte application
-# FROM node:14.15-alpine3.12 AS node_builder
-# COPY --from=builder /app/client ./
-# RUN yarn install && \
-    # yarn build
+FROM node:14.15-alpine3.12 AS node_builder
+COPY --from=builder /app/client ./
+RUN yarn install && \
+    yarn build
 
 # Final stage build, this will be the container
 # that we will deploy to production
-# FROM alpine:latest
-# COPY --from=builder /main ./
-# COPY --from=node_builder /build ./web
-# RUN chmod +x ./main
+FROM scratch
+COPY --from=builder /main ./
+COPY --from=node_builder /build ./web
+RUN chmod +x ./main
 EXPOSE 8080
 
-ENTRYPOINT ["./app/server/main"]
+ENTRYPOINT ["./main"]
