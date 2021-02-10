@@ -3,14 +3,16 @@
 
 # Build the Go API
 FROM golang:latest AS builder
+ENV GO111MODULE=on
+
+## We copy everything in the root directory
+## into our /app directory
 ADD . /app
 
 # Move to working directory /build
 WORKDIR /app/server
 
 # add go modules lockfiles
-COPY go.mod .
-COPY go.sum .
 RUN go mod download
 
 # prefetch the binaries, so that they will be cached and not downloaded on each change
@@ -35,10 +37,8 @@ RUN go build -ldflags "-w" -a -o /main .
 # that we will deploy to production
 # FROM alpine:latest
 # COPY --from=builder /main ./
-COPY /main ./
-
 # COPY --from=node_builder /build ./web
 # RUN chmod +x ./main
 EXPOSE 8080
 
-ENTRYPOINT ["./main"]
+ENTRYPOINT ["./app/server/main"]
