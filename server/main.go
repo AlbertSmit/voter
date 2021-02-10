@@ -8,7 +8,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	db "voter/prisma-client"
+
+	db "github.com/albertsmit/voter/prisma-client"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/net/websocket"
