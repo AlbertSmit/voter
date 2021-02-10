@@ -18,9 +18,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-var (
-	upgrader = websocket.Upgrader{}
-)
+// Upgrades the HTTP request to a websocket connection.
+var upgrader = websocket.Upgrader{}
 
 func getWS(c echo.Context) error {
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
@@ -30,17 +29,24 @@ func getWS(c echo.Context) error {
 	defer ws.Close()
 
 	for {
-		// Write
+		// Write.
 		err := ws.WriteMessage(websocket.TextMessage, []byte("Hello, Client!"))
 		if err != nil {
-			c.Logger().Error(err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				c.Logger().Error(err)
+			}
 		}
 
-		// Read
+		// Read.
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
-			c.Logger().Error(err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				c.Logger().Error(err)
+			}
 		}
+
+		// Broadcast incoming messages (Read).
+		ws.WriteMessage(websocket.TextMessage, msg)
 		fmt.Printf("%s\n", msg)
 	}
 }
