@@ -3,7 +3,6 @@
 
 # Build the Go API
 FROM golang:latest AS builder
-ENV GO111MODULE=on
 
 ## We copy everything in the root directory
 ## into our /app directory
@@ -41,4 +40,4 @@ COPY --from=builder /main ./
 RUN chmod +x ./main
 EXPOSE 8080
 
-ENTRYPOINT ["./main"]
+CMD ./main
