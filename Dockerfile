@@ -24,7 +24,7 @@ COPY . .
 RUN go generate ./...
 
 # build the binary with all dependencies
-RUN go build -o /main .
+RUN CGO_ENABLED=0 go build -o /main .
 
 # Build the Svelte application
 # FROM node:14.15-alpine3.12 AS node_builder
