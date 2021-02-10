@@ -92,7 +92,10 @@ func main() {
 
 	e := echo.New()
 
-	e.Static("/", "../client/build")
+	if os.Getenv("APP_ENV") == "production" {
+		e.Static("/", "./web")
+	}
+
 	e.Use(middleware.Logger())
 
 	e.GET("/ws", getWS)
