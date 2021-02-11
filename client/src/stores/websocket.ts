@@ -1,28 +1,34 @@
 import { writable } from "svelte/store";
+import { io, Socket } from "socket.io-client";
 
 const messageStore = writable("");
+const socketUri = `wss://votevotevotevote.herokuapp.com/socket`;
 
-let socket: WebSocket;
+let socket: Socket;
+let socket2: Socket;
+
 const setSocket = (room: string) => {
-  socket = new WebSocket(
-    `wss://votevotevotevote.herokuapp.com/ws?room=${room}`
-  );
+  socket = io(`${socketUri}/${room}`);
+  socket2 = io(`${socketUri}/${room}/chat`);
 
-  // Connection opened
-  socket.addEventListener("open", () => {
-    console.log("WS open.");
+  socket.on("connect", () => {
+    console.log(socket.id);
   });
 
-  // Listen for messages
-  socket.addEventListener("message", (event: any) => {
-    console.log("Message!", event);
-    messageStore.set(event.data);
+  socket.on("disconnect", () => {
+    console.log(socket.id); // undefined
+  });
+
+  socket.on("reply", (msg: string) => {
+    console.log("Message!", msg);
+    messageStore.set(msg);
   });
 };
 
 const sendMessage = (message: any) => {
-  if (socket.readyState <= 1) {
-    socket.send(message);
+  if (socket.connected) {
+    socket2.emit("msg", message);
+    socket.emit("notice", message);
   }
 };
 

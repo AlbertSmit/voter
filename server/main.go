@@ -93,8 +93,8 @@ func main() {
 		e.Static("/", "./web")
 	}
 
-	e.GET("/ws", serveWs)
-	e.Any("/socket", serveSocket)
+	// e.GET("/ws", serveWs)
+	e.Any("/socket/:room", serveSocket)
 	
 	e.POST("/post", postNewPost)
 	e.GET("/post/:id", getSinglePost)
