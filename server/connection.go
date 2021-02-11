@@ -3,6 +3,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -95,7 +96,11 @@ func (s *subscription) writePump() {
 // serveWs handles websocket requests from the peer.
 func serveWs(c echo.Context) error {
     ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
-		room := c.QueryParam("name")
+    room := c.QueryParam("room")
+    if (room == "") {
+        return echo.NewHTTPError(http.StatusBadRequest, "Please provide a room to join.")
+    }
+
     log.Println(room)
     if err != nil {
         log.Println(err)
