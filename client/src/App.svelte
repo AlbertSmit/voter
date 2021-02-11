@@ -16,6 +16,7 @@
   };
 
   onMount(() => {
+    store.setSocket("test");
     store.subscribe((currentMessage) => {
       messages = [...messages, currentMessage];
     });

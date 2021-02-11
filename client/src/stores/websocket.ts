@@ -1,17 +1,23 @@
 import { writable } from "svelte/store";
 
 const messageStore = writable("");
-const socket = new WebSocket("wss://votevotevotevote.herokuapp.com/ws");
 
-// Connection opened
-socket.addEventListener("open", () => {
-  console.log("WS open.");
-});
+let socket: WebSocket;
+const setSocket = (room: string) => {
+  socket = new WebSocket(
+    `wss://votevotevotevote.herokuapp.com/ws?room=${room}`
+  );
 
-// Listen for messages
-socket.addEventListener("message", (event: any) => {
-  messageStore.set(event.data);
-});
+  // Connection opened
+  socket.addEventListener("open", () => {
+    console.log("WS open.");
+  });
+
+  // Listen for messages
+  socket.addEventListener("message", (event: any) => {
+    messageStore.set(event.data);
+  });
+};
 
 const sendMessage = (message: any) => {
   if (socket.readyState <= 1) {
@@ -20,6 +26,7 @@ const sendMessage = (message: any) => {
 };
 
 export default {
+  setSocket,
   subscribe: messageStore.subscribe,
   sendMessage,
 };
