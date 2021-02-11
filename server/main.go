@@ -88,6 +88,10 @@ func main() {
 	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
 		Level: 5,
 	}))
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"https://votevotevotevote.herokuapp.com"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
 
 	if os.Getenv("APP_ENV") == "production" {
 		e.Static("/", "./web")
