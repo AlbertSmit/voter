@@ -1,3 +1,4 @@
+// @see https://github.com/tegalan/echo-ws/
 package main
 
 import "log"
