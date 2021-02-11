@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	db "github.com/albertsmit/voter/server/prisma-client"
-	uuid "github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
 	"github.com/joho/godotenv"
@@ -94,8 +93,20 @@ func postNewPost(c echo.Context) error {
 }
 
 func createNewRoom(c echo.Context) error {
-	uuid := uuid.New().String()
-	return c.JSONPretty(http.StatusOK, uuid, " ")
+	client := db.NewClient()
+	ctx := context.Background()
+
+	if err := client.Prisma.Connect(); err != nil {
+		return err
+	}
+
+	room, err := client.Room.CreateOne().Exec(ctx)
+
+	if err != nil {
+		return err
+	}
+	
+	return c.JSONPretty(http.StatusOK, room, " ")
 }
 
 func main() {
