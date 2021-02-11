@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 )
@@ -96,22 +97,22 @@ func (s *subscription) writePump() {
 // serveWs handles websocket requests from the peer.
 func serveWs(c echo.Context) error {
     ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
-    room := c.QueryParam("room")
-    if (room == "") {
+    vars := mux.Vars(c.Request())
+    log.Println(vars["room"])
+    if vars["room"] == "" {
         return echo.NewHTTPError(http.StatusBadRequest, "Please provide a room to join.")
     }
 
-    log.Println(room)
     if err != nil {
         log.Println(err)
         return err
     }
 
     con := &connection{send: make(chan []byte, 256), ws: ws}
-    sub := subscription{con, room}
+    sub := subscription{con, vars["room"]}
     h.register <- sub
     go sub.writePump()
     sub.readPump()
 
-		return nil
+    return nil
 }

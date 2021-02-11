@@ -15,6 +15,7 @@ const setSocket = (room: string) => {
 
   // Listen for messages
   socket.addEventListener("message", (event: any) => {
+    console.log("Message!", event);
     messageStore.set(event.data);
   });
 };
