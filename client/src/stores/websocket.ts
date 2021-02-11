@@ -8,8 +8,8 @@ let socket: Socket;
 let socket2: Socket;
 
 const setSocket = (room: string) => {
-  socket = io(`${socketUri}/${room}`);
-  socket2 = io(`${socketUri}/${room}/chat`);
+  socket = io(`${socketUri}/${room}`, { transports: ["websocket"] });
+  socket2 = io(`${socketUri}/${room}/chat`, { transports: ["websocket"] });
 
   socket.on("connect", () => {
     console.log(socket.id);

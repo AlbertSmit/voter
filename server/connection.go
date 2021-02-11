@@ -6,13 +6,37 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	"time"
 
 	socketio "github.com/googollee/go-socket.io"
+	"github.com/googollee/go-socket.io/engineio"
+	"github.com/googollee/go-socket.io/engineio/transport"
+	"github.com/googollee/go-socket.io/engineio/transport/polling"
+	"github.com/googollee/go-socket.io/engineio/transport/websocket"
 	"github.com/labstack/echo/v4"
 )
 
 func serveSocket(c echo.Context) error {
-    server, err := socketio.NewServer(nil)
+    // server, err := socketio.NewServer(nil)
+    allowOrigin := func(r *http.Request) bool {
+        return true
+    }
+
+    server, err := socketio.NewServer(&engineio.Options{
+        Transports: []transport.Transport{
+            &polling.Transport{
+                Client: &http.Client{
+                    Timeout: time.Minute,
+                },
+                CheckOrigin: allowOrigin,
+            },
+            &websocket.Transport{
+                CheckOrigin: allowOrigin,
+            },
+        },
+    })
+
     if (err != nil) {
         log.Println(err)
         return err
