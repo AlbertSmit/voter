@@ -93,12 +93,10 @@ func main() {
 		e.Static("/", "./web")
 	}
 
-	// e.GET("/ws", serveWs)
-	e.Any("/socket/:room", serveSocket)
-	
+	e.Any("/socket.io", serveSocket)
+
 	e.POST("/post", postNewPost)
 	e.GET("/post/:id", getSinglePost)
-
 	e.POST("/room", createNewRoom)
 
 	port := os.Getenv("PORT")
