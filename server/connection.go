@@ -1,4 +1,5 @@
 // @see https://github.com/gorilla/websocket/issues/46#issuecomment-227906715
+// and https://github.com/gorilla/websocket/blob/master/examples/chat/client.go
 package main
 
 import (
@@ -6,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 )
@@ -23,6 +23,11 @@ const (
 
     // Maximum message size allowed from peer.
     maxMessageSize = 512
+)
+
+var (
+	newline = []byte{'\n'}
+	space   = []byte{' '}
 )
 
 var upgrader = websocket.Upgrader{
@@ -78,18 +83,31 @@ func (s *subscription) writePump() {
     }()
     for {
         select {
-        case message, ok := <-c.send:
-            if !ok {
-                c.write(websocket.CloseMessage, []byte{})
-                return
-            }
-            if err := c.write(websocket.TextMessage, message); err != nil {
-                return
-            }
-        case <-ticker.C:
-            if err := c.write(websocket.PingMessage, []byte{}); err != nil {
-                return
-            }
+            case message, ok := <-c.send:
+                if !ok {
+                    c.write(websocket.CloseMessage, []byte{})
+                    return
+                }
+                if err := c.write(websocket.TextMessage, message); err != nil {
+                    return
+                }
+
+                c.write(websocket.TextMessage, message)
+
+                // Add queued chat messages to the current websocket message.
+                n := len(c.send)
+                for i := 0; i < n; i++ {
+                    c.write(websocket.TextMessage, newline)
+                    c.write(websocket.TextMessage, <-c.send)
+                }
+
+                if err := c.ws.Close(); err != nil {
+                    return
+                }
+            case <-ticker.C:
+                if err := c.write(websocket.PingMessage, []byte{}); err != nil {
+                    return
+                }
         }
     }
 }
@@ -97,9 +115,9 @@ func (s *subscription) writePump() {
 // serveWs handles websocket requests from the peer.
 func serveWs(c echo.Context) error {
     ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
-    vars := mux.Vars(c.Request())
-    log.Println(vars["room"])
-    if vars["room"] == "" {
+    room := c.QueryParam("room")
+    log.Println(room)
+    if room == "" {
         return echo.NewHTTPError(http.StatusBadRequest, "Please provide a room to join.")
     }
 
@@ -109,7 +127,7 @@ func serveWs(c echo.Context) error {
     }
 
     con := &connection{send: make(chan []byte, 256), ws: ws}
-    sub := subscription{con, vars["room"]}
+    sub := subscription{con, room}
     h.register <- sub
     go sub.writePump()
     sub.readPump()
