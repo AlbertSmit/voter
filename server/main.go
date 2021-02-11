@@ -94,6 +94,8 @@ func main() {
 	}
 
 	e.GET("/ws", serveWs)
+	e.Any("/socket", serveSocket)
+	
 	e.POST("/post", postNewPost)
 	e.GET("/post/:id", getSinglePost)
 
