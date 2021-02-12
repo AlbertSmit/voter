@@ -49,7 +49,11 @@ func (a *App) Initialize() {
 	}))
 
 	if os.Getenv("APP_ENV") == "production" {
-		e.Static("/", "./web")
+		// e.Static("/", "./web")
+		e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+			Root:   "./web",
+			HTML5: true,
+		}))
 	}
 
 	a.InitRouter()
