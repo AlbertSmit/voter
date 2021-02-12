@@ -30,6 +30,7 @@
     "svelte-check": "^1.1.33",
     "svelte-preprocess": "^4.0.0",
     "tailwindcss": "^2.0.3",
+    "tinro": "^0.5.12",
     "tslib": "^2.0.0",
     "typescript": "^3.9.3"
   },

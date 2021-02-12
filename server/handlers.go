@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	db "github.com/albertsmit/voter/server/prisma-client"
+	"github.com/google/uuid"
 
 	echo "github.com/labstack/echo/v4"
 )
@@ -54,18 +55,19 @@ func postNewPost(c echo.Context) error {
 }
 
 func createNewRoom(c echo.Context) error {
-	client := db.NewClient()
-	ctx := context.Background()
+	// client := db.NewClient()
+	// ctx := context.Background()
 
-	if err := client.Prisma.Connect(); err != nil {
-		return err
-	}
+	// if err := client.Prisma.Connect(); err != nil {
+	// 	return err
+	// }
 
-	room, err := client.Room.CreateOne().Exec(ctx)
+	// room, err := client.Room.CreateOne().Exec(ctx)
 
-	if err != nil {
-		return err
-	}
-	
-	return c.JSONPretty(http.StatusOK, room, " ")
+	// if err != nil {
+	// 	return err
+	// }
+
+	uuid := uuid.NewString()
+	return c.JSONPretty(http.StatusOK, uuid, " ")
 }
