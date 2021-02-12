@@ -24,14 +24,18 @@
   let submitted: boolean = false;
 
   const style = {
-    wrapper: "p-4 flex flex-col items-start justify-center mx-auto my-auto",
-    cloak: "inset-0 p-4 antialiased absolute bg-gray-800",
+    wrapper:
+      "p-4 h-screen flex flex-col items-start justify-center mx-auto my-auto",
+    cloak: "z-50 inset-0 p-4 antialiased absolute bg-gray-800",
     title: "text-3xl antialiased font-bold tracking-tight",
     span: "flex mb-4 items-center",
     icon:
       "h-5 w-5 ml-4 text-gray-400 hover:text-gray-500 transition-all cursor-pointer",
     body: "antialiased text-xs",
     url: "text-blue-600",
+    container: "inset-0 w-full flex-1",
+    messages: "p-4 space-y-2 flex-1 flex-col bg-gray-50 rounded-xl",
+    chat: "p-4 w-full flex flex-col bottom-0 inset-x-0 absolute",
     input:
       "border p-2 my-1 focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md",
     button:
@@ -58,8 +62,8 @@
     submitted = true;
   }
 
-  function copyCode(): void {
-    window.navigator.clipboard.writeText(window.location.href);
+  async function copyCode(): Promise<void> {
+    await navigator.clipboard.writeText(location.href);
   }
 </script>
 
@@ -95,21 +99,25 @@
     </svg>
   </span>
   <hr />
-  <ol>
-    {#each messages as message}
-      <li class={style.body}>
-        <b>{message.from}</b>
-        {message.msg}
-      </li>
-    {/each}
-  </ol>
+  <div class={style.container}>
+    <ol class={style.messages}>
+      {#each messages as message}
+        <li class={style.body}>
+          <b>{message.from}</b>
+          {message.msg}
+        </li>
+      {/each}
+    </ol>
+  </div>
 
-  <input class={style.input} type="text" bind:value={message} />
-  <button
-    class={style.button}
-    on:submit={onSendMessage}
-    on:click={onSendMessage}
-  >
-    Send Message
-  </button>
+  <div class={style.chat}>
+    <input class={style.input} type="text" bind:value={message} />
+    <button
+      class={style.button}
+      on:submit={onSendMessage}
+      on:click={onSendMessage}
+    >
+      Send Message
+    </button>
+  </div>
 </main>
