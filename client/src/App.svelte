@@ -4,6 +4,8 @@
   let message: any;
   let messages: any = [];
 
+  let room: string = "default";
+
   const style = {
     wrapper: "p-4 flex flex-col items-start justify-center mx-auto my-auto",
     title: "text-3xl antialiased font-bold tracking-tight",
@@ -15,18 +17,26 @@
       "bg-green-100 px-6 py-2 text-xs antialiased font-medium rounded-md text-green-500",
   };
 
-  onMount(() => {
-    store.setSocket("test");
+  function subscribeToRoom(room: string) {
+    store.setSocket(room);
     store.subscribe((currentMessage) => {
       messages = [...messages, currentMessage];
     });
+  }
+
+  onMount(() => {
+    subscribeToRoom(room);
   });
 
   function onSendMessage() {
     if (message.length > 0) {
-      store.sendMessage(message);
+      store.sendMessage(message, room);
       message = "";
     }
+  }
+
+  function onSetRoom() {
+    subscribeToRoom(room);
   }
 </script>
 
@@ -38,6 +48,8 @@
     > to learn how to build Svelte apps.
   </p>
   <hr />
+  <h2>Room: {room}</h2>
+  <hr />
   <ol>
     {#each messages as message}
       <li class={style.body}>
@@ -46,6 +58,19 @@
     {/each}
   </ol>
 
+  <label for="message">message</label>
   <input class={style.input} type="text" bind:value={message} />
-  <button class={style.button} on:click={onSendMessage}> Send Message </button>
+  <button
+    class={style.button}
+    on:submit={onSendMessage}
+    on:click={onSendMessage}
+  >
+    Send Message
+  </button>
+
+  <label for="room">room</label>
+  <input class={style.input} type="text" bind:value={room} />
+  <button class={style.button} on:submit={onSetRoom} on:click={onSetRoom}>
+    Send Message
+  </button>
 </main>

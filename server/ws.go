@@ -1,3 +1,4 @@
+// @see https://github.com/gorilla/websocket/issues/46
 package main
 
 import (
