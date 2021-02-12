@@ -17,9 +17,10 @@ const (
 
 // Client websocket client
 type Client struct {
-	Hub  *Hub
-	Conn *websocket.Conn
-	Send chan Message
+	Hub  		*Hub
+	Conn 		*websocket.Conn
+	Send 		chan Message
+	Room		string
 }
 
 func (c *Client) Read() {
