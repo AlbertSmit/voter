@@ -22,6 +22,7 @@ var upgrader = websocket.Upgrader{
 // WSHandler ...
 func (a *App) WSHandler(c echo.Context) error {
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	room := c.Param("room")
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -31,10 +32,10 @@ func (a *App) WSHandler(c echo.Context) error {
 		Hub:  a.hub,
 		Conn: conn,
 		Send: make(chan Message, 256),
+		Room: room,
 	}
 
 	a.hub.Register <- client
-
 	client.Listen()
 
 	return nil

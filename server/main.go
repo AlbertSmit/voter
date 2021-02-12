@@ -55,7 +55,7 @@ func (a *App) InitRouter() {
 	e := a.Echo
 
 	e.GET("/ping", a.Ping)
-	e.Any("/socket", a.WSHandler)
+	e.Any("/socket/:room", a.WSHandler)
 	e.POST("/post", postNewPost)
 	e.GET("/post/:id", getSinglePost)
 	e.POST("/room", createNewRoom)

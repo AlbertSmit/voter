@@ -17,8 +17,8 @@ const socketUri = `${l}://${
 }/socket`;
 
 let socket: WebSocket;
-const setSocket = (room?: string) => {
-  socket = new WebSocket(socketUri);
+const setSocket = (room: string = "default") => {
+  socket = new WebSocket(`${socketUri}/${room}`);
 
   socket.onopen = function () {
     console.log("Connected");
