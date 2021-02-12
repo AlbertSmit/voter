@@ -5,7 +5,7 @@ import "log"
 
 // Hub ...
 type Hub struct {
-	Clients 			map[*Client]bool
+	// Clients 			map[*Client]bool
 	Rooms 				map[string]map[*Client]bool
 
 	Broadcast 		chan Message
@@ -20,41 +20,43 @@ func NewHub() *Hub {
 		Broadcast:  make(chan Message),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
-		Clients:    make(map[*Client]bool),
+		// Clients:    make(map[*Client]bool),
 		Rooms:			make(map[string]map[*Client]bool),
 	}
 }
 
 // Run the hub
-func (h *Hub) Run() {
+func (hub *Hub) Run() {
 	log.Println("WS Hub running.")
 
 	for {
 		select {
-		case client := <-h.Register:
+		case client := <-hub.Register:
 			// New
-			connections := h.Rooms[client.Room]
+			connections := hub.Rooms[client.Room]
 			if connections == nil {
 					connections = make(map[*Client]bool)
-					h.Rooms[client.Room] = connections
+					hub.Rooms[client.Room] = connections
 			}
-			h.Rooms[client.Room][client] = true
+			hub.Rooms[client.Room][client] = true
 
 			// Old
 			// h.Clients[client] = true
 			log.Println("Client connected!")
-		case client := <-h.Unregister:
+		case client := <-hub.Unregister:
 			// New
-			connections := h.Rooms[client.Room]
+			connections := hub.Rooms[client.Room]
 			if connections != nil {
 				if _, ok := connections[client]; ok {
 					delete(connections, client)
 					close(client.Send)
 					if len(connections) == 0 {
-							delete(h.Rooms, client.Room)
+							delete(hub.Rooms, client.Room)
 					}
 				}
 			}
+
+			log.Println("Client disconnected!")
 
 			// Old
 			// if _, ok := h.Clients[client]; ok {
@@ -63,18 +65,19 @@ func (h *Hub) Run() {
 
 			// 	log.Println("Client disconnected!")
 			// }
-		case message := <-h.Broadcast:
+		case message := <-hub.Broadcast:
 			// New
-			connections := h.Rooms[message.Room]
-			for c := range connections {
+			connections := hub.Rooms[message.Room]
+			for connection := range connections {
 				select {
-				case c.Send <- message:
-				default:
-					close(c.Send)
-					delete(connections, c)
-					if len(connections) == 0 {
-							delete(h.Rooms, message.Room)
-					}
+					case connection.Send <- message:
+						log.Printf("Broadcast message: %s", message)
+					default:
+						close(connection.Send)
+						delete(connections, connection)
+						if len(connections) == 0 {
+								delete(hub.Rooms, message.Room)
+						}
 				}
 			}
 
