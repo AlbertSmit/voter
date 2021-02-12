@@ -2,6 +2,7 @@ import { writable } from "svelte/store";
 
 type Message = {
   type: string;
+  room?: string;
   body: { from: string; msg: string };
 };
 
@@ -50,11 +51,12 @@ const setSocket = (room: string = "default") => {
   };
 };
 
-const sendMessage = (message: any): void => {
+const sendMessage = (message: any, room: string = "test"): void => {
   if (socket.readyState === 1) {
     socket.send(
       JSON.stringify({
         type: "message",
+        room,
         body: {
           from: "Albert",
           msg: message,
