@@ -39,7 +39,7 @@ var upgrader = websocket.Upgrader{
 	EnableCompression: true,
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-    return origin == "http://localhost:8080" || origin == "https://votevotevotevote.herokuapp.com"
+    return origin == "http://localhost:8080" || origin == "http://votevotevotevote.herokuapp.com"
 	},
 }
 
