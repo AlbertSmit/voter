@@ -6,7 +6,7 @@ type Message = {
   body: { from: string; msg: string };
 };
 
-const messageStore = writable("");
+const messageStore = writable<string>("");
 
 const d = `localhost:1323`;
 const p = `votevotevotevote.herokuapp.com`;
@@ -21,45 +21,37 @@ let socket: WebSocket;
 const setSocket = (room: string = "default") => {
   socket = new WebSocket(`${socketUri}/${room}`);
 
-  socket.onopen = function () {
-    console.log("Connected");
-
+  socket.onopen = () => {
     socket.onmessage = (event: MessageEvent) => {
       const data: Message = JSON.parse(event.data);
-      console.log("Message!", data.body);
-      messageStore.set(data.body.msg);
+      messageStore.set(event.data);
     };
   };
 
   socket.onclose = (event: CloseEvent) => {
-    console.log(
-      "Socket is closed. Reconnect will be attempted in 3 second.",
-      event.reason
-    );
-    setTimeout(function () {
+    setTimeout(() => {
       setSocket();
     }, 3000);
   };
 
   socket.onerror = (error: any) => {
-    console.error(
-      "Socket encountered error: ",
-      error.message,
-      "Closing socket"
-    );
     socket.close();
   };
 };
 
-const sendMessage = (message: any, room: string = "test"): void => {
+const sendMessage = (
+  from: string = "default",
+  msg: any,
+  room: string = "test"
+): void => {
   if (socket.readyState === 1) {
     socket.send(
       JSON.stringify({
         type: "message",
         room,
         body: {
-          from: "Albert",
-          msg: message,
+          from,
+          msg,
         },
       })
     );

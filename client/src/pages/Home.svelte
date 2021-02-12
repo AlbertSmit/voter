@@ -4,7 +4,8 @@
   let roomUri: string;
 
   const style = {
-    wrapper: "p-4 flex flex-col items-start justify-center mx-auto my-auto",
+    wrapper:
+      "p-4 w-full h-screen flex flex-col items-center justify-center mx-auto my-auto",
     title: "text-3xl antialiased font-bold tracking-tight",
     body: "antialiased text-xs",
     url: "text-blue-600",
@@ -17,7 +18,8 @@
   async function requestRoomGeneration(): Promise<void> {
     const d = `localhost:1323`;
     const p = `votevotevotevote.herokuapp.com`;
-    const socketUri = `${window.location.protocol}://${
+    const { protocol } = window.location;
+    const socketUri = `${protocol}//${
       // @ts-ignore
       import.meta.env.MODE === "development" ? d : p
     }`;
@@ -27,26 +29,23 @@
   }
 
   function redirectToRoom(): void {
-    router.goto(roomUri);
+    router.goto(`room/${roomUri}`);
   }
 </script>
 
 <main class={style.wrapper}>
-  <h1 class={style.title}>Hello visitor!</h1>
-  <p class={style.body}>
-    Visit the <a class={style.url} href="https://svelte.dev/tutorial"
-      >Svelte tutorial</a
-    > to learn how to build Svelte apps.
-  </p>
+  <h1 class={style.title}>v4te</h1>
   <hr />
 
-  <button class={style.button} on:click={requestRoomGeneration}>
-    Change Room
-  </button>
+  {#if !roomUri}
+    <button class={style.button} on:click={requestRoomGeneration}>
+      Create Room
+    </button>
+  {/if}
 
   {#if roomUri}
     <button class={style.button} on:click={redirectToRoom}>
-      Go to room {roomUri}
+      Go to the room
     </button>
   {/if}
 </main>

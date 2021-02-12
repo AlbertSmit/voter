@@ -6,3 +6,4 @@
 
 <Route path="/"><Home /></Route>
 <Route path="/room/:id"><Room /></Route>
+<Route fallback redirect="/" />
