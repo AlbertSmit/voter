@@ -43,6 +43,11 @@ func (a *App) Initialize() {
 		Level: 5,
 	}))
 
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:8080", "http://votevotevote.herokuapp.com"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
+
 	if os.Getenv("APP_ENV") == "production" {
 		e.Static("/", "./web")
 	}
@@ -58,7 +63,7 @@ func (a *App) InitRouter() {
 	e.Any("/socket/:room", a.WSHandler)
 	e.POST("/post", postNewPost)
 	e.GET("/post/:id", getSinglePost)
-	e.POST("/room", createNewRoom)
+	e.GET("/room", createNewRoom)
 }
 
 // Run the app

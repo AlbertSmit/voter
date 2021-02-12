@@ -59,7 +59,7 @@
   }
 
   function copyCode(): void {
-    navigator.clipboard.writeText(window.location.href);
+    window.navigator.clipboard.writeText(window.location.href);
   }
 </script>
 
