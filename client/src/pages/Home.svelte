@@ -17,8 +17,7 @@
   async function requestRoomGeneration(): Promise<void> {
     const d = `localhost:1323`;
     const p = `votevotevotevote.herokuapp.com`;
-    const { protocol } = window.location;
-    const socketUri = `${protocol}://${
+    const socketUri = `${window.location.protocol}://${
       // @ts-ignore
       import.meta.env.MODE === "development" ? d : p
     }`;
