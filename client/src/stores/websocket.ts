@@ -1,34 +1,66 @@
 import { writable } from "svelte/store";
-import { io, Socket } from "socket.io-client";
 
-const messageStore = writable("");
-const socketUri = `wss://votevotevotevote.herokuapp.com/socket`;
-
-let socket: Socket;
-let socket2: Socket;
-
-const setSocket = (room: string) => {
-  socket = io(`${socketUri}/${room}`, { transports: ["websocket"] });
-  socket2 = io(`${socketUri}/${room}/chat`, { transports: ["websocket"] });
-
-  socket.on("connect", () => {
-    console.log(socket.id);
-  });
-
-  socket.on("disconnect", () => {
-    console.log(socket.id); // undefined
-  });
-
-  socket.on("reply", (msg: string) => {
-    console.log("Message!", msg);
-    messageStore.set(msg);
-  });
+type Message = {
+  type: string;
+  body: { from: string; msg: string };
 };
 
-const sendMessage = (message: any) => {
-  if (socket.connected) {
-    socket2.emit("msg", message);
-    socket.emit("notice", message);
+const messageStore = writable("");
+
+const d = `localhost:1323`;
+const p = `votevotevotevote.herokuapp.com`;
+const { protocol } = window.location;
+const l = protocol === "https:" ? "wss:" : "ws";
+const socketUri = `${l}://${
+  // @ts-ignore
+  import.meta.env.MODE === "development" ? d : p
+}/socket`;
+
+let socket: WebSocket;
+const setSocket = (room?: string) => {
+  socket = new WebSocket(socketUri);
+
+  socket.onopen = function () {
+    console.log("Connected");
+
+    socket.onmessage = (event: MessageEvent) => {
+      const data: Message = JSON.parse(event.data);
+      console.log("Message!", data.body);
+      messageStore.set(data.body.msg);
+    };
+  };
+
+  socket.onclose = (event: CloseEvent) => {
+    console.log(
+      "Socket is closed. Reconnect will be attempted in 3 second.",
+      event.reason
+    );
+    setTimeout(function () {
+      setSocket();
+    }, 3000);
+  };
+
+  socket.onerror = (error: any) => {
+    console.error(
+      "Socket encountered error: ",
+      error.message,
+      "Closing socket"
+    );
+    socket.close();
+  };
+};
+
+const sendMessage = (message: any): void => {
+  if (socket.readyState === 1) {
+    socket.send(
+      JSON.stringify({
+        type: "message",
+        body: {
+          from: "Albert",
+          msg: message,
+        },
+      })
+    );
   }
 };
 
