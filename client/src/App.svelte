@@ -17,26 +17,26 @@
       "bg-green-100 px-6 py-2 text-xs antialiased font-medium rounded-md text-green-500",
   };
 
-  function subscribeToRoom(room: string) {
+  function setRoom(room: string): void {
     store.setSocket(room);
+  }
+
+  onMount((): void => {
+    setRoom(room);
     store.subscribe((currentMessage) => {
       messages = [...messages, currentMessage];
     });
-  }
-
-  onMount(() => {
-    subscribeToRoom(room);
   });
 
-  function onSendMessage() {
+  function onSendMessage(): void {
     if (message.length > 0) {
       store.sendMessage(message, room);
       message = "";
     }
   }
 
-  function onSetRoom() {
-    subscribeToRoom(room);
+  function onSetRoom(): void {
+    store.setSocket(room);
   }
 </script>
 
@@ -71,6 +71,6 @@
   <label for="room">room</label>
   <input class={style.input} type="text" bind:value={room} />
   <button class={style.button} on:submit={onSetRoom} on:click={onSetRoom}>
-    Send Message
+    Change Room
   </button>
 </main>
