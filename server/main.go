@@ -63,11 +63,12 @@ func (a *App) Initialize() {
 func (a *App) InitRouter() {
 	e := a.Echo
 
-	e.GET("/ping", a.Ping)
-	e.Any("/socket/:room", a.WSHandler)
-	e.POST("/post", postNewPost)
-	e.GET("/post/:id", getSinglePost)
-	e.GET("/room", createNewRoom)
+	g := e.Group("/api")
+	g.GET("/ping", a.Ping)
+	g.Any("/socket/:room", a.WSHandler)
+	g.POST("/post", postNewPost)
+	g.GET("/post/:id", getSinglePost)
+	g.GET("/room", createNewRoom)
 }
 
 // Run the app

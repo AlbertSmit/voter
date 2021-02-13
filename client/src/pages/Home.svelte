@@ -24,7 +24,7 @@
       import.meta.env.MODE === "development" ? d : p
     }`;
 
-    const response = await fetch(`${socketUri}/room`);
+    const response = await fetch(`${socketUri}/api/room`);
     roomUri = await response.json();
   }
 

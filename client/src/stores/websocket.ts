@@ -15,7 +15,7 @@ const l = protocol === "https:" ? "wss:" : "ws";
 const socketUri = `${l}://${
   // @ts-ignore
   import.meta.env.MODE === "development" ? d : p
-}/socket`;
+}/api/socket`;
 
 let socket: WebSocket;
 const setSocket = (room: string = "default") => {
