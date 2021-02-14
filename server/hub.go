@@ -5,7 +5,6 @@ import "log"
 
 // Hub ...
 type Hub struct {
-	// Clients 			map[*Client]bool
 	Rooms 				map[string]map[*Client]bool
 
 	Broadcast 		chan Message
@@ -20,7 +19,6 @@ func NewHub() *Hub {
 		Broadcast:  make(chan Message),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
-		// Clients:    make(map[*Client]bool),
 		Rooms:			make(map[string]map[*Client]bool),
 	}
 }
@@ -32,7 +30,6 @@ func (hub *Hub) Run() {
 	for {
 		select {
 		case client := <-hub.Register:
-			// New
 			connections := hub.Rooms[client.Room]
 			if connections == nil {
 					connections = make(map[*Client]bool)
@@ -40,11 +37,8 @@ func (hub *Hub) Run() {
 			}
 			hub.Rooms[client.Room][client] = true
 
-			// Old
-			// h.Clients[client] = true
 			log.Println("Client connected!")
 		case client := <-hub.Unregister:
-			// New
 			connections := hub.Rooms[client.Room]
 			if connections != nil {
 				if _, ok := connections[client]; ok {
@@ -58,15 +52,7 @@ func (hub *Hub) Run() {
 
 			log.Println("Client disconnected!")
 
-			// Old
-			// if _, ok := h.Clients[client]; ok {
-			// 	delete(h.Clients, client)
-			// 	close(client.Send)
-
-			// 	log.Println("Client disconnected!")
-			// }
 		case message := <-hub.Broadcast:
-			// New
 			connections := hub.Rooms[message.Room]
 			for connection := range connections {
 				select {
@@ -80,17 +66,6 @@ func (hub *Hub) Run() {
 						}
 				}
 			}
-
-			// Old
-			// for client := range h.Clients {
-			// 	select {
-			// 	case client.Send <- message:
-			// 		log.Printf("Broadcast message: %s", message)
-			// 	default:
-			// 		close(client.Send)
-			// 		delete(h.Clients, client)
-			// 	}
-			// }
 		}
 	}
 }

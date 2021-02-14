@@ -58,7 +58,7 @@ func (c *Client) Read() {
 			continue
 		}
 
-		// log.Printf("New incoming message: %s", message)
+		log.Printf("New incoming message: %s", message)
 		c.Hub.Broadcast <- message
 	}
 }
