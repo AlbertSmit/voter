@@ -1,4 +1,5 @@
 // Convert to https://github.com/gofiber/recipes/tree/master/clean-architecture
+// and this https://medium.com/@apzuk3/input-validation-in-golang-bc24cdec1835
 package main
 
 import (
@@ -19,11 +20,11 @@ type App struct {
 	Fiber 				*fiber.App
 }
 
-// ClientsideData is being sent by the client.
+// Payload is being sent by the client.
 type Payload struct {
-	Type 					string `json:"type"`
-	From					string `json:"from"`
-	Message 			string `json:"message"`
+	Type 					string `json:"type" validate:"required"`
+	From					string `json:"from" validate:"required"`
+	Message 			string `json:"message" validate:"required"`
 }
 
 // Message gets send around.
@@ -34,7 +35,7 @@ type Message struct {
 
 // Client uses the service.
 type Client struct{
-	uuid					string
+	UUID					string `json:"type" validate:"required,uuid4"`
 } 
 
 // Subscription exist when you connect.
@@ -60,12 +61,7 @@ func main() {
 
 // Initialize the Fiber server.
 func (a *App) Initialize() {
-	if os.Getenv("APP_ENV") != "production" {
-		err := godotenv.Load()
-		if err != nil {
-			log.Fatal("Error loading .env file")
-		}
-	}
+	a.loadEnv()	
 
 	app := fiber.New()
 	a.Fiber = app
@@ -131,7 +127,6 @@ func (a *App) InitRouter() {
 
 			if messageType == websocket.TextMessage {
 				broadcast <- Message{Payload{"message", "Albert", string(msg)}, c.Params("room")}
-				log.Println("Websocket message received of type text", messageType)
 			} else {
 				log.Println("Websocket message received of type", messageType)
 			}
@@ -192,4 +187,13 @@ func (a *App) Run() {
 	}
 
 	a.Fiber.Listen(":" + port)
+}
+
+func (a *App) loadEnv() {
+	if os.Getenv("APP_ENV") != "production" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Error loading .env file")
+		}
+	}
 }
