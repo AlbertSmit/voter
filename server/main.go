@@ -19,15 +19,24 @@ type App struct {
 	Fiber *fiber.App
 }
 
+type message struct {
+	data 					string
+	room 					string
+}
+
 type client struct{} 
+type subscription struct {
+	connection 		*websocket.Conn
+	room 					string
+}
 
 var (
-	clients 			= make(map[*websocket.Conn]client)
-	register 			= make(chan *websocket.Conn)
-	broadcast 		= make(chan string)
-	unregister 		= make(chan *websocket.Conn)
+	rooms       	=	make(map[string]map[*websocket.Conn]bool)
+	clients 			= make(map[*subscription]client)
+	register 			= make(chan subscription)
+	broadcast 		= make(chan message)
+	unregister 		= make(chan subscription)
 ) 
-
 
 func main() {
 	app := App{}
@@ -57,13 +66,13 @@ func (a *App) Initialize() {
 			return c.Redirect("/web")
 		})
 		app.Static("/web", "./web")
-
 		app.Get("/web/*", func(ctx *fiber.Ctx) error {
 			return ctx.SendFile("./dist/index.html")
 		})
 	}
 
 	a.InitRouter()
+	go runHub()
 }
 
 func createNewRoom(ctx *fiber.Ctx) error {
@@ -87,28 +96,31 @@ func (a *App) InitRouter() {
 	})
 
 	// WS
-	ws.Get("/", websocket.New(func(c *websocket.Conn) {
+	ws.Get("/:room", websocket.New(func(c *websocket.Conn) {
+		s := subscription{c, c.Params("room")}
+
 		defer func() {
-			unregister <- c
+			unregister <- s
 			c.Close()
 		}()
 
-		register <- c
+		register <- s
 
 		for {
-			messageType, message, err := c.ReadMessage()
+			messageType, msg, err := s.connection.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Println("read error:", err)
+					log.Println("Read error:", err)
 				}
 
 				return // Calls the deferred function, i.e. closes the connection on error
 			}
 
 			if messageType == websocket.TextMessage {
-				broadcast <- string(message)
+				broadcast <- message{string(msg), c.Params("room")}
+				log.Println("Websocket message received of type text", messageType)
 			} else {
-				log.Println("websocket message received of type", messageType)
+				log.Println("Websocket message received of type", messageType)
 			}
 		}
 	}))
@@ -118,26 +130,43 @@ func runHub() {
 	for {
 		select {
 		case connection := <-register:
-			clients[connection] = client{}
-			log.Println("connection registered")
+			connections := rooms[connection.room]
+			if connections == nil {
+					connections = make(map[*websocket.Conn]bool)
+					rooms[connection.room] = connections
+			}
+			rooms[connection.room][connection.connection] = true
+
+			log.Println("Connection registered")
 
 		case message := <-broadcast:
-			log.Println("message received:", message)
+			log.Println("Message received:", message)
 
-			for connection := range clients {
-				if err := connection.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+			connections := rooms[message.room]
+			for c := range connections {
+				if err := c.WriteMessage(websocket.TextMessage, []byte(message.data)); err != nil {
 					log.Println("write error:", err)
 
-					unregister <- connection
-					connection.WriteMessage(websocket.CloseMessage, []byte{})
-					connection.Close()
+					s := subscription{c, c.Params("room")}
+					unregister <- s
+					c.WriteMessage(websocket.CloseMessage, []byte{})
+					c.Close()
 				}
 			}
 
-		case connection := <-unregister:
-			delete(clients, connection)
+		case subscription := <-unregister:
+			connections := rooms[subscription.room]
+			if connections != nil {
+					if _, ok := connections[subscription.connection]; ok {
+							delete(connections, subscription.connection)
+							// subscription.connection.Close()
+							if len(connections) == 0 {
+									delete(rooms, subscription.room)
+							}
+					}
+			}
 
-			log.Println("connection unregistered")
+			log.Println("Connection unregistered")
 		}
 	}
 }
