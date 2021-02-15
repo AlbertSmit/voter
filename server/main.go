@@ -2,7 +2,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 
@@ -20,17 +19,17 @@ type App struct {
 	Fiber 				*fiber.App
 }
 
-// Payload that a message sends.
+// ClientsideData is being sent by the client.
 type Payload struct {
-	payloadType 	string `json:"type"`
-	message 			string `json:"message"`
-	from					string `json:"from"`
+	Type 					string `json:"type"`
+	From					string `json:"from"`
+	Message 			string `json:"message"`
 }
 
 // Message gets send around.
 type Message struct {
-	data 					Payload
-	room 					string
+	Data 					Payload
+	Room 					string
 }
 
 // Client uses the service.
@@ -131,7 +130,7 @@ func (a *App) InitRouter() {
 			}
 
 			if messageType == websocket.TextMessage {
-				broadcast <- Message{Payload{"message", string(msg), "Albert"}, c.Params("room")}
+				broadcast <- Message{Payload{"message", "Albert", string(msg)}, c.Params("room")}
 				log.Println("Websocket message received of type text", messageType)
 			} else {
 				log.Println("Websocket message received of type", messageType)
@@ -156,10 +155,9 @@ func runHub() {
 		case message := <-broadcast:
 			log.Println("Message received:", message)
 
-			connections := rooms[message.room]
+			connections := rooms[message.Room]
 			for c := range connections {
-				stringified, _ := json.Marshal(Payload(message.data))
-				if err := c.WriteMessage(websocket.TextMessage, []byte(stringified)); err != nil {
+				if err := c.WriteMessage(websocket.TextMessage, []byte(message.Data.Message)); err != nil {
 					log.Println("write error:", err)
 
 					s := Subscription{c, c.Params("room")}
