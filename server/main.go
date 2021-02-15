@@ -16,26 +16,39 @@ import (
 
 // App houses Fiber.
 type App struct {
-	Fiber *fiber.App
+	Fiber 				*fiber.App
 }
 
-type message struct {
-	data 					string
+// Payload that a message sends.
+type Payload struct {
+	payloadType 	string `json:"type"`
+	message 			string `json:"message"`
+	from					string `json:"from"`
+}
+
+// Message gets send around.
+type Message struct {
+	data 					Payload
 	room 					string
 }
 
-type client struct{} 
-type subscription struct {
+// Client uses the service.
+type Client struct{
+	uuid					string
+} 
+
+// Subscription exist when you connect.
+type Subscription struct {
 	connection 		*websocket.Conn
 	room 					string
 }
 
 var (
 	rooms       	=	make(map[string]map[*websocket.Conn]bool)
-	clients 			= make(map[*subscription]client)
-	register 			= make(chan subscription)
-	broadcast 		= make(chan message)
-	unregister 		= make(chan subscription)
+	clients 			= make(map[*Subscription]Client)
+	register 			= make(chan Subscription)
+	broadcast 		= make(chan Message)
+	unregister 		= make(chan Subscription)
 ) 
 
 func main() {
@@ -97,7 +110,7 @@ func (a *App) InitRouter() {
 
 	// WS
 	ws.Get("/:room", websocket.New(func(c *websocket.Conn) {
-		s := subscription{c, c.Params("room")}
+		s := Subscription{c, c.Params("room")}
 
 		defer func() {
 			unregister <- s
@@ -117,7 +130,7 @@ func (a *App) InitRouter() {
 			}
 
 			if messageType == websocket.TextMessage {
-				broadcast <- message{string(msg), c.Params("room")}
+				broadcast <- Message{Payload{"message", string(msg), "Albert"}, c.Params("room")}
 				log.Println("Websocket message received of type text", messageType)
 			} else {
 				log.Println("Websocket message received of type", messageType)
@@ -144,10 +157,10 @@ func runHub() {
 
 			connections := rooms[message.room]
 			for c := range connections {
-				if err := c.WriteMessage(websocket.TextMessage, []byte(message.data)); err != nil {
+				if err := c.WriteMessage(websocket.TextMessage, []byte(message.data.message)); err != nil {
 					log.Println("write error:", err)
 
-					s := subscription{c, c.Params("room")}
+					s := Subscription{c, c.Params("room")}
 					unregister <- s
 					c.WriteMessage(websocket.CloseMessage, []byte{})
 					c.Close()

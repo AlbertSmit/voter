@@ -1,11 +1,5 @@
 import { writable } from "svelte/store";
 
-type Message = {
-  type: string;
-  room?: string;
-  body: { from: string; msg: string };
-};
-
 const messageStore = writable<string>("");
 
 const d = `localhost:1323`;
@@ -23,7 +17,6 @@ const setSocket = (room: string = "default") => {
 
   socket.onopen = () => {
     socket.onmessage = (event: MessageEvent) => {
-      const data: Message = JSON.parse(event.data);
       messageStore.set(event.data);
     };
   };
@@ -45,16 +38,17 @@ const sendMessage = (
   room: string = "test"
 ): void => {
   if (socket.readyState === 1) {
-    socket.send(
-      JSON.stringify({
-        type: "message",
-        room,
-        body: {
-          from,
-          msg,
-        },
-      })
-    );
+    socket.send(msg);
+  }
+};
+
+export type Status = "WAITING" | "VOTING" | "PRESENTING";
+const changeRoomStatus = (
+  status: Status = "WAITING",
+  room: string = "test"
+) => {
+  if (socket.readyState === 1) {
+    socket.send(status);
   }
 };
 
@@ -62,4 +56,5 @@ export default {
   setSocket,
   subscribe: messageStore.subscribe,
   sendMessage,
+  changeRoomStatus,
 };

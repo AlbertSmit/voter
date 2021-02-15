@@ -2,20 +2,21 @@
   import { meta } from "tinro";
   import { onMount } from "svelte";
   import store from "../stores/websocket";
+  import type { Status } from "../stores/websocket";
 
   type Message = {
     from: string;
     msg: string;
   };
 
-  type WebSocketResponse = {
-    type: "message" | "notify" | "pong";
-    body: Message;
-    Room: string;
-  };
+  // type WebSocketResponse = {
+  //   type: "message" | "notify" | "pong";
+  //   body: Message;
+  //   Room: string;
+  // };
 
   let message: string;
-  let messages: Message[] = [];
+  let messages: string[] = [];
 
   const route = meta();
   let room: string = route.params.id;
@@ -46,8 +47,9 @@
     store.setSocket(room);
     store.subscribe((currentMessage) => {
       if (!currentMessage) return;
-      const { body }: WebSocketResponse = JSON.parse(currentMessage);
-      messages = [...messages, { ...body }];
+      // const { body }: WebSocketResponse = JSON.parse(currentMessage);
+      const body: string = currentMessage;
+      messages = [...messages, body];
     });
   });
 
@@ -64,6 +66,10 @@
 
   async function copyCode(): Promise<void> {
     await navigator.clipboard.writeText(location.href);
+  }
+
+  function setRoom(status: Status): void {
+    void store.changeRoomStatus(status, room);
   }
 </script>
 
@@ -98,13 +104,25 @@
       />
     </svg>
   </span>
+
+  <div>
+    <button class={style.button} on:click={() => setRoom("WAITING")}>
+      Waiting
+    </button>
+    <button class={style.button} on:click={() => setRoom("VOTING")}>
+      Voting
+    </button>
+    <button class={style.button} on:click={() => setRoom("PRESENTING")}>
+      Presenting
+    </button>
+  </div>
+
   <hr />
   <div class={style.container}>
     <ol class={style.messages}>
       {#each messages as message}
         <li class={style.body}>
-          <b>{message.from}</b>
-          {message.msg}
+          <b>{message}</b>
         </li>
       {/each}
     </ol>
