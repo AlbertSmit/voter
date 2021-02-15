@@ -1,21 +1,33 @@
+// Convert to https://github.com/gofiber/recipes/tree/master/clean-architecture
 package main
-
-//go:generate go run github.com/prisma/prisma-client-go generate
 
 import (
 	"log"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/websocket/v2"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
-	echo "github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
-// App houses echo framework and WS hub.
+// App houses Fiber.
 type App struct {
-	Echo *echo.Echo
-	hub  *Hub
+	Fiber *fiber.App
 }
+
+type client struct{} 
+
+var (
+	clients 			= make(map[*websocket.Conn]client)
+	register 			= make(chan *websocket.Conn)
+	broadcast 		= make(chan string)
+	unregister 		= make(chan *websocket.Conn)
+) 
+
 
 func main() {
 	app := App{}
@@ -24,7 +36,7 @@ func main() {
 	app.Run()
 }
 
-// Initialize the Echo server.
+// Initialize the Fiber server.
 func (a *App) Initialize() {
 	if os.Getenv("APP_ENV") != "production" {
 		err := godotenv.Load()
@@ -33,42 +45,101 @@ func (a *App) Initialize() {
 		}
 	}
 
-	e := echo.New()
-	a.Echo = e
+	app := fiber.New()
+	a.Fiber = app
 
-	a.hub = NewHub()
-
-	e.Use(middleware.Recover())
-	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
-		Level: 5,
-	}))
-
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:8080", "http://votevotevote.herokuapp.com"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
-	}))
+	app.Use(cors.New())
+	app.Use(recover.New())
+	app.Use(compress.New())
 
 	if os.Getenv("APP_ENV") == "production" {
-		// e.Static("/", "./web")
-		e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-			Root:   "./web",
-			HTML5: true,
-		}))
+		app.Get("/", func(c *fiber.Ctx) error {
+			return c.Redirect("/web")
+		})
+		app.Static("/web", "./web")
+
+		app.Get("/web/*", func(ctx *fiber.Ctx) error {
+			return ctx.SendFile("./dist/index.html")
+		})
 	}
 
 	a.InitRouter()
 }
 
+func createNewRoom(ctx *fiber.Ctx) error {
+	uuid := uuid.NewString()
+	ctx.JSON(uuid)
+
+	return nil
+}
+
 // InitRouter all the routes.
 func (a *App) InitRouter() {
-	e := a.Echo
+	party := a.Fiber.Group("/api")
+	party.Get("/room", createNewRoom)
 
-	g := e.Group("/api")
-	g.GET("/ping", a.Ping)
-	g.Any("/socket/:room", a.WSHandler)
-	g.POST("/post", postNewPost)
-	g.GET("/post/:id", getSinglePost)
-	g.GET("/room", createNewRoom)
+	// WS Upgrade Middleware
+	ws := party.Group("/socket", func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) { 
+			return c.Next()
+		}
+		return c.SendStatus(fiber.StatusUpgradeRequired)
+	})
+
+	// WS
+	ws.Get("/", websocket.New(func(c *websocket.Conn) {
+		defer func() {
+			unregister <- c
+			c.Close()
+		}()
+
+		register <- c
+
+		for {
+			messageType, message, err := c.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Println("read error:", err)
+				}
+
+				return // Calls the deferred function, i.e. closes the connection on error
+			}
+
+			if messageType == websocket.TextMessage {
+				broadcast <- string(message)
+			} else {
+				log.Println("websocket message received of type", messageType)
+			}
+		}
+	}))
+}
+
+func runHub() {
+	for {
+		select {
+		case connection := <-register:
+			clients[connection] = client{}
+			log.Println("connection registered")
+
+		case message := <-broadcast:
+			log.Println("message received:", message)
+
+			for connection := range clients {
+				if err := connection.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+					log.Println("write error:", err)
+
+					unregister <- connection
+					connection.WriteMessage(websocket.CloseMessage, []byte{})
+					connection.Close()
+				}
+			}
+
+		case connection := <-unregister:
+			delete(clients, connection)
+
+			log.Println("connection unregistered")
+		}
+	}
 }
 
 // Run the app
@@ -78,6 +149,5 @@ func (a *App) Run() {
 		log.Fatal("$PORT must be set")
 	}
 
-	go a.hub.Run()
-	a.Echo.Logger.Fatal(a.Echo.Start(":" + port))
+	a.Fiber.Listen(":" + port)
 }

@@ -4,12 +4,15 @@ module github.com/albertsmit/voter/server
 go 1.15
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/andybalholm/brotli v1.0.1 // indirect
+	github.com/fasthttp/websocket v1.4.3 // indirect
+	github.com/gofiber/fiber v1.13.3
+	github.com/gofiber/fiber/v2 v2.5.0 // indirect
+	github.com/gofiber/websocket v0.5.1
+	github.com/gofiber/websocket/v2 v2.0.2
 	github.com/google/uuid v1.2.0
-	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.3.0
-	github.com/labstack/echo/v4 v4.1.17
-	github.com/prisma/prisma-client-go v0.4.0
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
+	github.com/klauspost/compress v1.11.7 // indirect
+	github.com/valyala/fasthttp v1.18.0 // indirect
+	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 )
