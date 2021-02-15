@@ -1,5 +1,17 @@
 import { writable } from "svelte/store";
 
+type Payload = {
+  payloadType: string;
+  message: string;
+  from: string;
+};
+
+// Message gets send around.
+type Message = {
+  data: Payload;
+  room: string;
+};
+
 const messageStore = writable<string>("");
 
 const d = `localhost:1323`;
@@ -38,7 +50,16 @@ const sendMessage = (
   room: string = "test"
 ): void => {
   if (socket.readyState === 1) {
-    socket.send(msg);
+    socket.send(
+      JSON.stringify({
+        room,
+        data: {
+          type: "message",
+          message: msg,
+          from,
+        },
+      })
+    );
   }
 };
 

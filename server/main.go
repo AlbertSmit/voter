@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 
@@ -157,7 +158,8 @@ func runHub() {
 
 			connections := rooms[message.room]
 			for c := range connections {
-				if err := c.WriteMessage(websocket.TextMessage, []byte(message.data.message)); err != nil {
+				stringified, _ := json.Marshal(Payload(message.data))
+				if err := c.WriteMessage(websocket.TextMessage, []byte(stringified)); err != nil {
 					log.Println("write error:", err)
 
 					s := Subscription{c, c.Params("room")}
