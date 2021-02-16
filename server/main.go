@@ -101,14 +101,26 @@ func (a *App) Initialize() {
 	app.Use(recover.New())
 	app.Use(compress.New())
 
+	// First, init the routes
+	a.InitRouter()
+
+	// Then init static 
+	// (since we are on root)
 	if os.Getenv("APP_ENV") == "production" {
-		app.Static("/web", "web")
-		app.Get("/web/*", func(ctx *fiber.Ctx) error {
+		app.Static("/", "web")
+		app.Get("/*", func(ctx *fiber.Ctx) error {
 			return ctx.SendFile("./web/index.html")
 		})
 	}
 
-	a.InitRouter()
+	// If all else fails, implement this:
+	// app.Use(func(c *fiber.Ctx) {
+	// 	if !strings.HasPrefix(c.Path(), "/internal-api") {
+	// 		// authorization logic
+	// 		c.Next()
+	// 	}
+	// })
+
 	go runHub()
 }
 
