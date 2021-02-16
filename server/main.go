@@ -102,12 +102,9 @@ func (a *App) Initialize() {
 	app.Use(compress.New())
 
 	if os.Getenv("APP_ENV") == "production" {
-		app.Get("/", func(c *fiber.Ctx) error {
-			return c.Redirect("/web")
-		})
 		app.Static("/web", "./web")
 		app.Get("/web/*", func(ctx *fiber.Ctx) error {
-			return ctx.SendFile("./dist/index.html")
+			return ctx.SendFile("./web/index.html")
 		})
 	}
 
