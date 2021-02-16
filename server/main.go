@@ -15,6 +15,7 @@ import (
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	"github.com/mitchellh/mapstructure"
 )
 
 // App houses Fiber.
@@ -22,17 +23,41 @@ type App struct {
 	Fiber 				*fiber.App
 }
 
+// IncomingRequest to catch
+type IncomingRequest struct {
+  Type 					string `json:"type"`
+  Data 					json.RawMessage
+}
+
+// ReponseWithType to return to client.
+type ReponseWithType struct {
+	Type					string `json:"type"`
+	Data					interface{} `json:"data"`
+}
+
 // Payload is being sent by the client.
 type Payload struct {
-	Type 					string `json:"type" validate:"required"`
 	From					string `json:"from" validate:"required"`
 	Message 			string `json:"message" validate:"required"`
 }
 
 // Message gets send around.
 type Message struct {
+	Type 					string `json:"type" validate:"required"`
 	Data 					Payload
-	Room 					string
+	Room 					string `json:"room"`
+}
+
+// State is the Status payload
+type State struct {
+	Status				string `json:"status"`
+}
+
+// Status for a room.
+type Status struct {
+	Type 					string `json:"type" validate:"required"`
+	State 				State
+	Room 					string `json:"room"`
 }
 
 // Client uses the service.
@@ -47,11 +72,15 @@ type Subscription struct {
 }
 
 var (
+	// Manage clients
 	rooms       	=	make(map[string]map[*websocket.Conn]bool)
 	clients 			= make(map[*Subscription]Client)
 	register 			= make(chan Subscription)
-	broadcast 		= make(chan Message)
 	unregister 		= make(chan Subscription)
+
+	// Send data
+	broadcast 		= make(chan Message)
+	status				= make(chan Status)
 ) 
 
 func main() {
@@ -118,7 +147,9 @@ func (a *App) InitRouter() {
 		register <- s
 
 		for {
-			var result Message
+			// Interface for type switching.
+			// Parse JSON from incoming message.
+			var result map[string]interface{}
 			if err := s.connection.ReadJSON(&result); err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					log.Println("Read error:", err)
@@ -127,9 +158,30 @@ func (a *App) InitRouter() {
 				return // Calls the deferred function, i.e. closes the connection on error
 			}
 
-			log.Printf("From: %s, Message: %s, Type: %s", result.Data.From, result.Data.Message, result.Data.Type)
-			broadcast <- Message{result.Data, c.Params("room")}
-		}
+			switch result["type"] {
+				case "message":
+					var msg Message
+					err := mapstructure.Decode(result, &msg)
+					if err != nil {
+						panic(err)
+					}
+					
+					log.Println("Switch: Message.")
+					broadcast <- msg
+				case "status":
+					var sts Status
+					err := mapstructure.Decode(result, &sts)
+					if err != nil {
+						panic(err)
+					}
+					
+					log.Println("Switch: Status", sts.State.Status, "")
+					status <-	sts
+				default:
+					log.Println("Switch: Default.", result)
+				}
+			}
+		
 	}))
 }
 
@@ -139,24 +191,52 @@ func runHub() {
 		case connection := <-register:
 			connections := rooms[connection.room]
 			if connections == nil {
-					connections = make(map[*websocket.Conn]bool)
-					rooms[connection.room] = connections
+				connections = make(map[*websocket.Conn]bool)
+				rooms[connection.room] = connections
 			}
 			rooms[connection.room][connection.connection] = true
 
 			log.Println("Connection registered")
 
-		case message := <-broadcast:
-			// log.Println("Message received:", message)
+		case message := <-status:
 			connections := rooms[message.Room]
 			for c := range connections {
 				// Stringify the data.
-				emp := &Payload{
-					Type: message.Data.Type,
-					From: message.Data.From,
-					Message: message.Data.Message,
+				payload := &ReponseWithType{
+					Type: "status",
+					Data: State{message.State.Status},
 				}
-				e, err := json.Marshal(emp)
+				e, err := json.Marshal(payload)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				// Send to clients.
+				if err := c.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
+					log.Println("write error:", err)
+
+					s := Subscription{c, c.Params("room")}
+					unregister <- s
+					
+					c.WriteMessage(websocket.CloseMessage, []byte{})
+					c.Close()
+				}
+			}
+
+
+		case message := <-broadcast:
+			connections := rooms[message.Room]
+			for c := range connections {
+				// Stringify the data.
+				payload := &ReponseWithType{
+					Type: "message",
+					Data: Payload{
+						From: message.Data.From,
+						Message: message.Data.Message,
+					},
+				}
+				e, err := json.Marshal(payload)
 				if err != nil {
 						fmt.Println(err)
 						return
@@ -168,6 +248,7 @@ func runHub() {
 
 					s := Subscription{c, c.Params("room")}
 					unregister <- s
+
 					c.WriteMessage(websocket.CloseMessage, []byte{})
 					c.Close()
 				}

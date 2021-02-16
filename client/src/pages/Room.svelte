@@ -4,19 +4,27 @@
   import store from "../stores/websocket";
   import type { Status } from "../stores/websocket";
 
-  type Message = {
+  type MessageBody = {
+    message: string;
     from: string;
-    msg: string;
   };
 
-  // type WebSocketResponse = {
-  //   type: "message" | "notify" | "pong";
-  //   body: Message;
-  //   Room: string;
-  // };
+  type MessageResponse = {
+    type: "message";
+    data: MessageBody;
+  };
+
+  type StatusBody = {
+    status: Status;
+  };
+
+  type StatusResponse = {
+    type: "status";
+    data: StatusBody;
+  };
 
   let message: string;
-  let messages: string[] = [];
+  let messages: MessageBody[] = [];
 
   const route = meta();
   let room: string = route.params.id;
@@ -39,18 +47,23 @@
     chat: "p-4 w-full flex flex-col bottom-0 inset-x-0 absolute",
     input:
       "border p-2 my-1 focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md",
-    button:
-      "bg-green-100 px-6 py-2 text-xs antialiased font-medium rounded-md text-green-500",
+    button: "bg-gray-100 px-6 py-2 text-xs antialiased font-medium rounded-md",
   };
 
   onMount((): void => {
     store.setSocket(room);
-    store.subscribe((currentMessage) => {
-      if (!currentMessage) return;
-      // const { body }: WebSocketResponse = JSON.parse(currentMessage);
-      const body: string = currentMessage;
-      messages = [...messages, body];
+    store.subscribe((payload) => {
+      if (!payload) return;
+      const { data }: MessageResponse = JSON.parse(payload);
+      messages = [...messages, { ...data }];
     });
+  });
+
+  var status: Status;
+  store.status((payload) => {
+    if (!payload) return;
+    const { data }: StatusResponse = JSON.parse(payload);
+    status = data.status;
   });
 
   function onSendMessage(): void {
@@ -106,13 +119,34 @@
   </span>
 
   <div>
-    <button class={style.button} on:click={() => setRoom("WAITING")}>
+    <button
+      class={`${style.button} ${
+        status === "WAITING"
+          ? "bg-red-100 text-red-500"
+          : "bg-green-100 text-green-500"
+      }`}
+      on:click={() => setRoom("WAITING")}
+    >
       Waiting
     </button>
-    <button class={style.button} on:click={() => setRoom("VOTING")}>
+    <button
+      class={`${style.button} ${
+        status === "VOTING"
+          ? "bg-red-100 text-red-500"
+          : "bg-green-100 text-green-500"
+      }`}
+      on:click={() => setRoom("VOTING")}
+    >
       Voting
     </button>
-    <button class={style.button} on:click={() => setRoom("PRESENTING")}>
+    <button
+      class={`${style.button} ${
+        status === "PRESENTING"
+          ? "bg-red-100 text-red-500"
+          : "bg-green-100 text-green-500"
+      }`}
+      on:click={() => setRoom("PRESENTING")}
+    >
       Presenting
     </button>
   </div>
@@ -120,9 +154,10 @@
   <hr />
   <div class={style.container}>
     <ol class={style.messages}>
-      {#each messages as message}
+      {#each messages as content}
         <li class={style.body}>
-          <b>{message}</b>
+          <b>{content.from}</b>
+          {content.message}
         </li>
       {/each}
     </ol>
