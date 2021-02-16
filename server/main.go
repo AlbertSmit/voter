@@ -3,6 +3,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -116,8 +118,8 @@ func (a *App) InitRouter() {
 		register <- s
 
 		for {
-			messageType, msg, err := s.connection.ReadMessage()
-			if err != nil {
+			var result Message
+			if err := s.connection.ReadJSON(&result); err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					log.Println("Read error:", err)
 				}
@@ -125,11 +127,8 @@ func (a *App) InitRouter() {
 				return // Calls the deferred function, i.e. closes the connection on error
 			}
 
-			if messageType == websocket.TextMessage {
-				broadcast <- Message{Payload{"message", "Albert", string(msg)}, c.Params("room")}
-			} else {
-				log.Println("Websocket message received of type", messageType)
-			}
+			log.Printf("From: %s, Message: %s, Type: %s", result.Data.From, result.Data.Message, result.Data.Type)
+			broadcast <- Message{result.Data, c.Params("room")}
 		}
 	}))
 }
@@ -148,11 +147,23 @@ func runHub() {
 			log.Println("Connection registered")
 
 		case message := <-broadcast:
-			log.Println("Message received:", message)
-
+			// log.Println("Message received:", message)
 			connections := rooms[message.Room]
 			for c := range connections {
-				if err := c.WriteMessage(websocket.TextMessage, []byte(message.Data.Message)); err != nil {
+				// Stringify the data.
+				emp := &Payload{
+					Type: message.Data.Type,
+					From: message.Data.From,
+					Message: message.Data.Message,
+				}
+				e, err := json.Marshal(emp)
+				if err != nil {
+						fmt.Println(err)
+						return
+				}
+
+				// Send to clients.
+				if err := c.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
 					log.Println("write error:", err)
 
 					s := Subscription{c, c.Params("room")}
@@ -165,13 +176,12 @@ func runHub() {
 		case subscription := <-unregister:
 			connections := rooms[subscription.room]
 			if connections != nil {
-					if _, ok := connections[subscription.connection]; ok {
-							delete(connections, subscription.connection)
-							// subscription.connection.Close()
-							if len(connections) == 0 {
-									delete(rooms, subscription.room)
-							}
+				if _, ok := connections[subscription.connection]; ok {
+					delete(connections, subscription.connection)
+					if len(connections) == 0 {
+							delete(rooms, subscription.room)
 					}
+				}
 			}
 
 			log.Println("Connection unregistered")
