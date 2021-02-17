@@ -62,7 +62,8 @@ type Status struct {
 
 // Client uses the service.
 type Client struct{
-	UUID					string `json:"type" validate:"required,uuid4"`
+	UUID					string `json:"uuid" validate:"required,uuid4"`
+	Name					string `json:"name"`
 } 
 
 // Subscription exist when you connect.
@@ -73,8 +74,9 @@ type Subscription struct {
 
 var (
 	// Manage clients
-	rooms       	=	make(map[string]map[*websocket.Conn]bool)
-	clients 			= make(map[*Subscription]Client)
+	rooms       	=	make(map[string]map[Subscription]Client)
+
+	// Manage connections
 	register 			= make(chan Subscription)
 	unregister 		= make(chan Subscription)
 
@@ -112,14 +114,6 @@ func (a *App) Initialize() {
 			return ctx.SendFile("./web/index.html")
 		})
 	}
-
-	// If all else fails, implement this:
-	// app.Use(func(c *fiber.Ctx) {
-	// 	if !strings.HasPrefix(c.Path(), "/internal-api") {
-	// 		// authorization logic
-	// 		c.Next()
-	// 	}
-	// })
 
 	go runHub()
 }
@@ -172,25 +166,20 @@ func (a *App) InitRouter() {
 					var msg Message
 					err := mapstructure.Decode(result, &msg)
 					if err != nil {
-						panic(err)
+						return
 					}
 					
-					log.Println("Switch: Message.")
 					broadcast <- msg
 				case "status":
 					var sts Status
 					err := mapstructure.Decode(result, &sts)
 					if err != nil {
-						panic(err)
+						return
 					}
 					
-					log.Println("Switch: Status", sts.State.Status, "")
 					status <-	sts
-				default:
-					log.Println("Switch: Default.", result)
 				}
 			}
-		
 	}))
 }
 
@@ -200,13 +189,36 @@ func runHub() {
 		case connection := <-register:
 			connections := rooms[connection.room]
 			if connections == nil {
-				connections = make(map[*websocket.Conn]bool)
+				connections = make(map[Subscription]Client)
 				rooms[connection.room] = connections
 			}
-			rooms[connection.room][connection.connection] = true
+			rooms[connection.room][connection] = Client{ UUID: uuid.NewString() }
+			log.Println("New connection; listing room ->", rooms[connection.room])
 
-			log.Println("Connection registered")
+			// Send new subs around.
+			for c := range connections {
+				clients := []*Client{}
+				for _, client := range rooms[connection.room] {
+					log.Println("Client", client)
+					clients = append(clients, &client)
+				}
 
+				// Emit the full room (?).
+				payload := &ReponseWithType{
+					Type: "update",
+					Data: clients,
+				}
+
+				e, err := json.Marshal(payload)
+				if err != nil {
+						fmt.Println(err)
+						return
+				}
+
+				c.connection.WriteMessage(websocket.TextMessage, []byte(e))
+				c.connection.Close()
+			}
+			
 		case message := <-status:
 			connections := rooms[message.Room]
 			for c := range connections {
@@ -222,14 +234,14 @@ func runHub() {
 				}
 
 				// Send to clients.
-				if err := c.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
+				if err := c.connection.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
 					log.Println("write error:", err)
 
-					s := Subscription{c, c.Params("room")}
+					s := Subscription{c.connection, c.connection.Params("room")}
 					unregister <- s
 					
-					c.WriteMessage(websocket.CloseMessage, []byte{})
-					c.Close()
+					c.connection.WriteMessage(websocket.CloseMessage, []byte{})
+					c.connection.Close()
 				}
 			}
 
@@ -252,29 +264,54 @@ func runHub() {
 				}
 
 				// Send to clients.
-				if err := c.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
+				if err := c.connection.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
 					log.Println("write error:", err)
 
-					s := Subscription{c, c.Params("room")}
+					s := Subscription{c.connection, c.connection.Params("room")}
 					unregister <- s
 
-					c.WriteMessage(websocket.CloseMessage, []byte{})
-					c.Close()
+					c.connection.WriteMessage(websocket.CloseMessage, []byte{})
+					c.connection.Close()
 				}
 			}
 
 		case subscription := <-unregister:
 			connections := rooms[subscription.room]
 			if connections != nil {
-				if _, ok := connections[subscription.connection]; ok {
-					delete(connections, subscription.connection)
+				if _, ok := connections[subscription]; ok {
+					delete(connections, subscription)
+
+					log.Println("Disconnection; listing remaining room ->", rooms[subscription.room])
+
+					// Notify other users of abscense.
+					for c := range connections {
+						clients := []*Client{}
+						for _, client := range rooms[subscription.room] {
+							log.Println("Client", client)
+							clients = append(clients, &client)
+						}
+
+						// Emit the full room (?).
+						payload := &ReponseWithType{
+							Type: "update",
+							Data: clients,
+						}
+
+						e, err := json.Marshal(payload)
+						if err != nil {
+								fmt.Println(err)
+								return
+						}
+
+						c.connection.WriteMessage(websocket.TextMessage, []byte(e))
+						c.connection.Close()
+					}
+
 					if len(connections) == 0 {
-							delete(rooms, subscription.room)
+						delete(rooms, subscription.room)
 					}
 				}
 			}
-
-			log.Println("Connection unregistered")
 		}
 	}
 }

@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/joho/godotenv v1.3.0
 	github.com/klauspost/compress v1.11.7 // indirect
-	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	github.com/mitchellh/mapstructure v1.4.1 
 	github.com/savsgio/gotils v0.0.0-20200616100644-13ff1fd2c28c // indirect
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 )
