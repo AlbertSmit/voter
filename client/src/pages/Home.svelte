@@ -1,5 +1,6 @@
 <script lang="ts">
   import { router } from "tinro";
+  import iam from "../stores/iam";
 
   const style = {
     wrapper:
@@ -24,6 +25,11 @@
     }`;
 
     const response = await fetch(`${socketUri}/api/room`);
+    const admin = response.headers.get("X-Admin");
+    if (admin) {
+      iam.set(admin);
+    }
+
     router.goto(`room/${await response.json()}`);
   }
 </script>

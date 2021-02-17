@@ -2,8 +2,9 @@
   import { meta } from "tinro";
   import { onMount } from "svelte";
   import store from "../stores/websocket";
-  import Modal from "../components/Modal.svelte";
+  import { Modal, State, Button } from "../components";
   import type { Status } from "../stores/websocket";
+  import iam from "../stores/iam";
 
   type MessageBody = {
     message: string;
@@ -120,13 +121,9 @@
       <p class="text-gray-800 dark:text-white">What's your name?</p>
 
       <input class={style.input} type="text" bind:value={name} />
-      <button
-        class={`bg-gray-800 text-white dark:text-gray-800 dark:bg-white ${style.button}`}
-        on:submit={onFinalizeName}
-        on:click={onFinalizeName}
-      >
+      <Button on:submit={onFinalizeName} on:click={onFinalizeName}>
         Submit
-      </button>
+      </Button>
     </div>
   {/if}
 
@@ -159,38 +156,42 @@
     </div>
   </span>
 
-  <div>
-    <button
-      class={`${style.button} ${
-        status === "WAITING"
-          ? "bg-red-100 text-red-500"
-          : "bg-green-100 text-green-500"
-      }`}
-      on:click={() => setRoom("WAITING")}
-    >
-      Waiting
-    </button>
-    <button
-      class={`${style.button} ${
-        status === "VOTING"
-          ? "bg-red-100 text-red-500"
-          : "bg-green-100 text-green-500"
-      }`}
-      on:click={() => setRoom("VOTING")}
-    >
-      Voting
-    </button>
-    <button
-      class={`${style.button} ${
-        status === "PRESENTING"
-          ? "bg-red-100 text-red-500"
-          : "bg-green-100 text-green-500"
-      }`}
-      on:click={() => setRoom("PRESENTING")}
-    >
-      Presenting
-    </button>
-  </div>
+  <State {status} />
+
+  {#if $iam}
+    <div>
+      <button
+        class={`${style.button} ${
+          status === "WAITING"
+            ? "bg-red-100 text-red-500"
+            : "bg-green-100 text-green-500"
+        }`}
+        on:click={() => setRoom("WAITING")}
+      >
+        Waiting
+      </button>
+      <button
+        class={`${style.button} ${
+          status === "VOTING"
+            ? "bg-red-100 text-red-500"
+            : "bg-green-100 text-green-500"
+        }`}
+        on:click={() => setRoom("VOTING")}
+      >
+        Voting
+      </button>
+      <button
+        class={`${style.button} ${
+          status === "PRESENTING"
+            ? "bg-red-100 text-red-500"
+            : "bg-green-100 text-green-500"
+        }`}
+        on:click={() => setRoom("PRESENTING")}
+      >
+        Presenting
+      </button>
+    </div>
+  {/if}
 
   <hr />
   <div class={style.container}>
