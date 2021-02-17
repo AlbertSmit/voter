@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
@@ -28,7 +27,6 @@ func (h* Hub) Run() {
 						clients = append(clients, client)
 					}
 
-					// Emit the full room (?).
 					payload := &ReponseWithType{
 						Type: "update",
 						Data: clients,
@@ -47,11 +45,11 @@ func (h* Hub) Run() {
 			case message := <-status:
 				connections := rooms[message.Room]
 				for c := range connections {
-					// Stringify the data.
 					payload := &ReponseWithType{
 						Type: "status",
 						Data: State{message.State.Status},
 					}
+
 					e, err := json.Marshal(payload)
 					if err != nil {
 						fmt.Println(err)
@@ -60,8 +58,6 @@ func (h* Hub) Run() {
 
 					// Send to clients.
 					if err := c.connection.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
-						log.Println("write error:", err)
-
 						s := Subscription{c.connection, c.connection.Params("room")}
 						unregister <- s
 						
@@ -74,7 +70,6 @@ func (h* Hub) Run() {
 			case message := <-broadcast:
 				connections := rooms[message.Room]
 				for c := range connections {
-					// Stringify the data.
 					payload := &ReponseWithType{
 						Type: "message",
 						Data: Payload{
@@ -82,6 +77,7 @@ func (h* Hub) Run() {
 							Message: message.Data.Message,
 						},
 					}
+
 					e, err := json.Marshal(payload)
 					if err != nil {
 							fmt.Println(err)
@@ -90,8 +86,6 @@ func (h* Hub) Run() {
 
 					// Send to clients.
 					if err := c.connection.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
-						log.Println("write error:", err)
-
 						s := Subscription{c.connection, c.connection.Params("room")}
 						unregister <- s
 
@@ -115,7 +109,6 @@ func (h* Hub) Run() {
 						clients = append(clients, client)
 					}
 
-					// Emit the full room (?).
 					payload := &ReponseWithType{
 						Type: "update",
 						Data: clients,
@@ -137,15 +130,13 @@ func (h* Hub) Run() {
 					if _, ok := connections[subscription]; ok {
 						delete(connections, subscription)
 
-						// Notify other users of abscense.
+						// Notify other users of absense.
 						for c := range connections {
 							clients := []*Client{}
 							for _, client := range rooms[subscription.room] {
-								log.Println("Client", client)
 								clients = append(clients, client)
 							}
 
-							// Emit the full room (?).
 							payload := &ReponseWithType{
 								Type: "update",
 								Data: clients,

@@ -1,18 +1,17 @@
 <script lang="ts">
   import { router } from "tinro";
 
-  let roomUri: string;
-
   const style = {
     wrapper:
-      "p-4 w-full h-screen flex flex-col items-center justify-center mx-auto my-auto",
-    title: "text-3xl antialiased font-bold tracking-tight",
+      "p-4 w-full h-screen flex flex-col items-center justify-center mx-auto my-auto bg-white dark:bg-gray-900",
+    title:
+      "text-3xl antialiased font-bold tracking-tight text-gray-800 dark:text-white",
     body: "antialiased text-xs",
     url: "text-blue-600",
     input:
       "border p-2 my-1 focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md",
     button:
-      "bg-green-100 px-6 py-2 text-xs antialiased font-medium rounded-md text-green-500",
+      "bg-green-100 dark:bg-white text-green-500 dark:text-gray-800 px-6 py-2 text-xs antialiased font-medium rounded-md",
   };
 
   async function requestRoomGeneration(): Promise<void> {
@@ -25,11 +24,7 @@
     }`;
 
     const response = await fetch(`${socketUri}/api/room`);
-    roomUri = await response.json();
-  }
-
-  function redirectToRoom(): void {
-    router.goto(`room/${roomUri}`);
+    router.goto(`room/${await response.json()}`);
   }
 </script>
 
@@ -37,15 +32,7 @@
   <h1 class={style.title}>v4te</h1>
   <hr />
 
-  {#if !roomUri}
-    <button class={style.button} on:click={requestRoomGeneration}>
-      Create Room
-    </button>
-  {/if}
-
-  {#if roomUri}
-    <button class={style.button} on:click={redirectToRoom}>
-      Go to the room
-    </button>
-  {/if}
+  <button class={style.button} on:click={requestRoomGeneration}>
+    Create Room
+  </button>
 </main>

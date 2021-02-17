@@ -16,8 +16,9 @@ const socketUri = `${l}://${
 
 let socket: WebSocket;
 const setSocket = (room: string = "default") => {
-  socket = new WebSocket(`${socketUri}/${room}`);
+  if (socket) return;
 
+  socket = new WebSocket(`${socketUri}/${room}`);
   socket.onopen = () => {
     socket.onmessage = (event: MessageEvent) => {
       const { type } = JSON.parse(event.data);
@@ -30,7 +31,7 @@ const setSocket = (room: string = "default") => {
           statusStore.set(event.data);
           break;
         case "update":
-          userStore.set(event.data);
+          userStore.update(() => event.data);
           break;
         default:
           break;
