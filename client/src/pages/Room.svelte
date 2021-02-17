@@ -75,6 +75,7 @@
 
   function onFinalizeName(): void {
     submitted = true;
+    void store.updateUser(name, room);
   }
 
   async function copyCode(): Promise<void> {

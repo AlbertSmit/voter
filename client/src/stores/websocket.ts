@@ -56,6 +56,20 @@ const sendMessage = (
   }
 };
 
+const updateUser = (name: any = "default", room: string = "test"): void => {
+  if (socket.readyState === 1) {
+    socket.send(
+      JSON.stringify({
+        room,
+        type: "update",
+        data: {
+          name,
+        },
+      })
+    );
+  }
+};
+
 const changeRoomStatus = (
   status: Status = "WAITING",
   room: string = "test"
@@ -78,5 +92,6 @@ export default {
   subscribe: messageStore.subscribe,
   status: statusStore.subscribe,
   sendMessage,
+  updateUser,
   changeRoomStatus,
 };
