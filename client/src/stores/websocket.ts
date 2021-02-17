@@ -3,6 +3,7 @@ import { writable } from "svelte/store";
 export type Status = "WAITING" | "VOTING" | "PRESENTING";
 const statusStore = writable<string>("");
 const messageStore = writable<string>("");
+const userStore = writable<string>("");
 
 const d = `localhost:1323`;
 const p = `votevotevotevote.herokuapp.com`;
@@ -19,10 +20,21 @@ const setSocket = (room: string = "default") => {
 
   socket.onopen = () => {
     socket.onmessage = (event: MessageEvent) => {
-      const { type, data } = JSON.parse(event.data);
+      const { type } = JSON.parse(event.data);
 
-      if (type === "message") messageStore.set(event.data);
-      if (type === "status") statusStore.set(event.data);
+      switch (type) {
+        case "message":
+          messageStore.set(event.data);
+          break;
+        case "status":
+          statusStore.set(event.data);
+          break;
+        case "update":
+          userStore.set(event.data);
+          break;
+        default:
+          break;
+      }
     };
   };
 
@@ -91,6 +103,7 @@ export default {
   setSocket,
   subscribe: messageStore.subscribe,
   status: statusStore.subscribe,
+  users: userStore.subscribe,
   sendMessage,
   updateUser,
   changeRoomStatus,

@@ -59,11 +59,23 @@
     });
   });
 
-  var status: Status;
+  let status: Status;
   store.status((payload) => {
     if (!payload) return;
     const { data }: StatusResponse = JSON.parse(payload);
     status = data.status;
+  });
+
+  type User = {
+    uuid: string;
+    name: string;
+  };
+
+  let users: User[] = [];
+  store.users((payload) => {
+    if (!payload) return;
+    const { data }: { data: User[] } = JSON.parse(payload);
+    users = data;
   });
 
   function onSendMessage(): void {
@@ -162,6 +174,16 @@
         </li>
       {/each}
     </ol>
+    <div
+      class="p-4 bg-green-100 text-green-500 rounded-md mt-4 w-full flex flex-row space-x-2"
+    >
+      <p class={style.body}>Users online:</p>
+      {#each users as user}
+        <p class={style.body}>
+          <b>{user.name}</b>
+        </p>
+      {/each}
+    </div>
   </div>
 
   <div class={style.chat}>
