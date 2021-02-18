@@ -95,3 +95,8 @@ func (r Role) String() string {
 type StatefulRoom struct {
 	State					string `json:"state"`
 }
+
+type Initial struct {
+	State					StatefulRoom 
+	Clients				[]*Client
+}

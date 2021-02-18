@@ -2,7 +2,7 @@
   import { meta } from "tinro";
   import { onMount } from "svelte";
   import store from "../stores/websocket";
-  import { Modal, State, Button } from "../components";
+  import { Modal, State, Button, Panel } from "../components";
   import type { Status } from "../stores/websocket";
   import iam from "../stores/iam";
 
@@ -159,41 +159,34 @@
   <State {status} />
 
   {#if $iam}
-    <div>
-      <button
-        class={`${style.button} ${
-          status === "WAITING"
-            ? "bg-red-100 text-red-500"
-            : "bg-green-100 text-green-500"
-        }`}
+    <Panel>
+      <p
+        class={status !== "WAITING"
+          ? "text-gray-500 antialiased"
+          : "text-white antialiased"}
         on:click={() => setRoom("WAITING")}
       >
-        Waiting
-      </button>
-      <button
-        class={`${style.button} ${
-          status === "VOTING"
-            ? "bg-red-100 text-red-500"
-            : "bg-green-100 text-green-500"
-        }`}
+        Wait
+      </p>
+      <p
+        class={status !== "VOTING"
+          ? "text-gray-500 antialiased"
+          : "text-white antialiased"}
         on:click={() => setRoom("VOTING")}
       >
-        Voting
-      </button>
-      <button
-        class={`${style.button} ${
-          status === "PRESENTING"
-            ? "bg-red-100 text-red-500"
-            : "bg-green-100 text-green-500"
-        }`}
+        Vote
+      </p>
+      <p
+        class={status !== "PRESENTING"
+          ? "text-gray-500 antialiased"
+          : "text-white antialiased"}
         on:click={() => setRoom("PRESENTING")}
       >
-        Presenting
-      </button>
-    </div>
+        Present
+      </p>
+    </Panel>
   {/if}
 
-  <hr />
   <div class={style.container}>
     <ol class={style.messages}>
       {#each messages as content}

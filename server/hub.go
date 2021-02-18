@@ -53,6 +53,11 @@ func (h* Hub) Run() {
 					Role: Role(role),
 				}
 
+				clients := []*Client{}
+				for _, client := range rooms[connection.room] {
+					clients = append(clients, client)
+				}
+
 				// Send new subs around.
 				for c := range connections {
 					clients := []*Client{}
@@ -67,8 +72,8 @@ func (h* Hub) Run() {
 
 					e, err := json.Marshal(payload)
 					if err != nil {
-							fmt.Println(err)
-							return
+						fmt.Println(err)
+						return
 					}
 
 					c.connection.WriteMessage(websocket.TextMessage, []byte(e))
@@ -99,10 +104,11 @@ func (h* Hub) Run() {
 					}
 				}
 
-
 			case message := <-broadcast:
 				connections := rooms[message.Room]
 				for c := range connections {
+				// TODO: Write method to handle marhsaling and typing. 
+				// !! Too much WET. Not enough DRY.
 					payload := &ReponseWithType{
 						Type: "message",
 						Data: Payload{
@@ -113,8 +119,8 @@ func (h* Hub) Run() {
 
 					e, err := json.Marshal(payload)
 					if err != nil {
-							fmt.Println(err)
-							return
+						fmt.Println(err)
+						return
 					}
 
 					// Send to clients.
@@ -149,8 +155,8 @@ func (h* Hub) Run() {
 
 					e, err := json.Marshal(payload)
 					if err != nil {
-							fmt.Println(err)
-							return
+						fmt.Println(err)
+						return
 					}
 
 					c.connection.WriteMessage(websocket.TextMessage, []byte(e))
@@ -177,8 +183,8 @@ func (h* Hub) Run() {
 
 							e, err := json.Marshal(payload)
 							if err != nil {
-									fmt.Println(err)
-									return
+								fmt.Println(err)
+								return
 							}
 
 							c.connection.WriteMessage(websocket.TextMessage, []byte(e))
