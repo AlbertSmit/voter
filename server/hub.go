@@ -8,17 +8,50 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	rooms       	=	make(map[string]map[Subscription]*Client)
+	state					= make(map[string]*StatefulRoom)
+
+	register 			= make(chan Subscription)
+	unregister 		= make(chan Subscription)
+	
+	broadcast 		= make(chan Message)
+	status				= make(chan Status)
+	update				= make(chan Update)
+) 
+
 // Run it.
 func (h* Hub) Run() {
 	for {
 		select {
 			case connection := <-register:
+				// Get room
 				connections := rooms[connection.room]
+				
+				// IAM
+				var role Role
 				if connections == nil {
+					role = Admin
+				} else {
+					role = User
+				}
+
+				if connections == nil {
+					// Create room
 					connections = make(map[Subscription]*Client)
 					rooms[connection.room] = connections
+
+					// Set initial state
+					state[connection.room] = &StatefulRoom{
+						State: "WAITING",
+					}
+				} 
+
+				// Add client to room
+				rooms[connection.room][connection] = &Client{
+					UUID: uuid.NewString(), 					
+					Role: Role(role),
 				}
-				rooms[connection.room][connection] = &Client{ UUID: uuid.NewString() }
 
 				// Send new subs around.
 				for c := range connections {
@@ -41,7 +74,7 @@ func (h* Hub) Run() {
 					c.connection.WriteMessage(websocket.TextMessage, []byte(e))
 					c.connection.Close()
 				}
-				
+
 			case message := <-status:
 				connections := rooms[message.Room]
 				for c := range connections {
@@ -130,7 +163,7 @@ func (h* Hub) Run() {
 					if _, ok := connections[subscription]; ok {
 						delete(connections, subscription)
 
-						// Notify other users of absense.
+						// Notify other users of abscense.
 						for c := range connections {
 							clients := []*Client{}
 							for _, client := range rooms[subscription.room] {

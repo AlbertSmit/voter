@@ -25,8 +25,8 @@
     }`;
 
     const response = await fetch(`${socketUri}/api/room`);
-    const admin = response.headers.get("X-Admin");
-    if (admin) {
+    const admin = response.headers.get("X-Super-Admin");
+    if (admin === "Absolutely!") {
       iam.set(admin);
     }
 

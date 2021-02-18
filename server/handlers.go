@@ -12,6 +12,7 @@ import (
 // createNewRoom to join.
 func createNewRoom(ctx *fiber.Ctx) error {
 	uuid := uuid.NewString()
+	ctx.Response().Header.Add("X-Super-Admin", "Absolutely!")
 	ctx.JSON(uuid)
 
 	return nil

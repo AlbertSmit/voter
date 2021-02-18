@@ -66,13 +66,32 @@ type Update struct {
 }
 
 // Client uses the service.
-type Client struct{
+type Client struct {
 	UUID					string `json:"uuid" validate:"required,uuid4"`
 	Name					string `json:"name"`
+	Role					Role `json:"role"`
 } 
 
 // Subscription exist when you connect.
 type Subscription struct {
 	connection 		*websocket.Conn
 	room 					string
+}
+
+// Role for a user.
+type Role int
+const (
+	// Admin rules supreme.
+	Admin Role = iota
+	// User follows.
+	User
+)
+
+func (r Role) String() string {
+	return [...]string{"Admin", "User"}[r]
+}
+
+// StatefulRoom holds room state.
+type StatefulRoom struct {
+	State					string `json:"state"`
 }

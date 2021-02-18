@@ -14,17 +14,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var (
-	rooms       	=	make(map[string]map[Subscription]*Client)
-
-	register 			= make(chan Subscription)
-	unregister 		= make(chan Subscription)
-	
-	broadcast 		= make(chan Message)
-	status				= make(chan Status)
-	update				= make(chan Update)
-) 
-
 func main() {
 	app := App{}
 	hub := Hub{}
@@ -80,9 +69,12 @@ func (a *App) EnvVars() {
 
 // InitMiddlewares for Fiber.
 func (a *App) InitMiddlewares() {
-	a.Fiber.Use(cors.New())
 	a.Fiber.Use(recover.New())
 	a.Fiber.Use(compress.New())
+	a.Fiber.Use(cors.New(cors.Config{
+		ExposeHeaders: "X-Super-Admin",
+		AllowOrigins: "http://localhost:8080, http://votevotevotevote.herokuapp.com",
+	}))
 }
 
 // InitSPA to serve to client.
