@@ -58,7 +58,9 @@ func handleWebSocket(c *websocket.Conn) {
 					return
 				}
 				
+				msg.Sub = &s
 				broadcast <- msg
+				
 			case "status":
 				var sts Status
 				err := mapstructure.Decode(result, &sts)
@@ -66,6 +68,7 @@ func handleWebSocket(c *websocket.Conn) {
 					return
 				}
 				
+				sts.Sub = &s
 				status <-	sts
 
 			case "update":
@@ -75,7 +78,18 @@ func handleWebSocket(c *websocket.Conn) {
 					return
 				}
 				
-				update <- withUpdate(updt, &s)
+				updt.Sub = &s
+				update <- updt
+
+			case "vote":
+				var vt CastVote
+				err := mapstructure.Decode(result, &vt)
+				if err != nil {
+					return
+				}
+				
+				vt.Sub = &s
+				vote <- vt
 			}
 		}
 }

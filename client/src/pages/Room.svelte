@@ -87,9 +87,17 @@
 
   function onSendMessage(): void {
     if (message.length > 0) {
-      store.sendMessage(name, message, room);
+      store.sendMessage(name, message);
       message = "";
     }
+  }
+
+  function onCastVote(user: {
+    uuid: string;
+    name: string;
+    role?: number;
+  }): void {
+    store.vote(user.uuid);
   }
 
   function promptForName(): void {
@@ -102,7 +110,7 @@
 
   function onFinalizeName(): void {
     submitted = true;
-    void store.updateUser(name, room);
+    void store.updateUser(name);
   }
 
   async function copyCode(): Promise<void> {
@@ -110,7 +118,7 @@
   }
 
   function setRoom(status: Status): void {
-    void store.changeRoomStatus(status, room);
+    void store.changeRoomStatus(status);
   }
 </script>
 
@@ -198,7 +206,7 @@
     </ol>
     <div class="w-full flex flex-col space-y-1">
       {#each users as user}
-        <ListItem {status} {user} />
+        <ListItem {status} {user} on:click={() => onCastVote(user)} />
       {/each}
     </div>
   </div>

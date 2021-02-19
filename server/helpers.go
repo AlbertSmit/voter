@@ -3,13 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-)
 
-// Helper to add subscription to Update struct.
-func withUpdate(update Update, sub *Subscription) Update {
-	update.Sub = sub
-	return update
-}
+	"github.com/gofiber/websocket/v2"
+)
 
 // getClients maps over clients in a room.
 func getClients(rooms map[string]map[Subscription]*Client, room string ) []*Client {
@@ -21,8 +17,18 @@ func getClients(rooms map[string]map[Subscription]*Client, room string ) []*Clie
 	return clients
 }
 
-// writeTypedResponse reduces json Marshal boilerplate.
-func writeTypedResponse(messageType string, data interface{}) []byte {
+// getVotes maps over votes.
+func getVotes(votes map[string]map[Subscription]*Vote, room string ) []*Vote {
+	var vts []*Vote
+	for _, vote := range votes[room] {
+		vts = append(vts, vote)
+	}
+
+	return vts
+}
+
+// createTypedResponse reduces json Marshal boilerplate.
+func createTypedResponse(messageType string, data interface{}) []byte {
 	payload := &ReponseWithType{
 		Type: messageType,
 		Data: data,
@@ -47,4 +53,28 @@ func provideRole(connections map[Subscription]*Client) Role {
 	}
 	
 	return role
+}
+
+// write to clients
+func writeToClient(c *websocket.Conn, message []byte) error {
+	writeErr := c.WriteMessage(websocket.TextMessage, []byte(message))
+	if (writeErr != nil) {
+		return writeErr
+	}
+
+	closeErr := c.Close()
+	if (closeErr != nil) {
+		return closeErr
+	}
+
+	return nil
+}
+
+// terminate connection
+func terminateClient(c *websocket.Conn) {
+	s := Subscription{c, c.Params("room")}
+	unregister <- s
+	
+	c.WriteMessage(websocket.CloseMessage, []byte{})
+	c.Close()
 }

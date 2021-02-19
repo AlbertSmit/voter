@@ -33,32 +33,30 @@ const setSocket = (room: string = "default") => {
         case "update":
           userStore.update(() => event.data);
           break;
+        case "vote":
+          console.log("vote", event.data);
+          break;
         default:
           break;
       }
     };
   };
 
-  socket.onclose = (event: CloseEvent) => {
+  socket.onclose = () => {
     setTimeout(() => {
       setSocket();
     }, 3000);
   };
 
-  socket.onerror = (error: any) => {
+  socket.onerror = () => {
     socket.close();
   };
 };
 
-const sendMessage = (
-  from: string = "default",
-  msg: any,
-  room: string = "test"
-): void => {
+const sendMessage = (from: string = "default", msg: any): void => {
   if (socket.readyState === 1) {
     socket.send(
       JSON.stringify({
-        room,
         type: "message",
         data: {
           message: msg,
@@ -69,11 +67,24 @@ const sendMessage = (
   }
 };
 
-const updateUser = (name: any = "default", room: string = "test"): void => {
+const vote = (id: string = "default"): void => {
   if (socket.readyState === 1) {
     socket.send(
       JSON.stringify({
-        room,
+        type: "vote",
+        data: {
+          for: id,
+          motivation: "hey",
+        },
+      })
+    );
+  }
+};
+
+const updateUser = (name: any = "default"): void => {
+  if (socket.readyState === 1) {
+    socket.send(
+      JSON.stringify({
         type: "update",
         data: {
           name,
@@ -83,14 +94,10 @@ const updateUser = (name: any = "default", room: string = "test"): void => {
   }
 };
 
-const changeRoomStatus = (
-  status: Status = "WAITING",
-  room: string = "test"
-) => {
+const changeRoomStatus = (status: Status = "WAITING") => {
   if (socket.readyState === 1) {
     socket.send(
       JSON.stringify({
-        room,
         type: "status",
         state: {
           status,
@@ -105,6 +112,7 @@ export default {
   subscribe: messageStore.subscribe,
   status: statusStore.subscribe,
   users: userStore.subscribe,
+  vote,
   sendMessage,
   updateUser,
   changeRoomStatus,

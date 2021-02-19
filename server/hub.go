@@ -7,6 +7,7 @@ import (
 
 var (
 	rooms       	=	make(map[string]map[Subscription]*Client)
+	votes					= make(map[string]map[Subscription]*Vote)
 	state					= make(map[string]*StatefulRoom)
 
 	register 			= make(chan Subscription)
@@ -15,6 +16,7 @@ var (
 	broadcast 		= make(chan Message)
 	status				= make(chan Status)
 	update				= make(chan Update)
+	vote					= make(chan CastVote)
 ) 
 
 // Run it.
@@ -22,16 +24,13 @@ func (h* Hub) Run() {
 	for {
 		select {
 			case connection := <-register:
-				// Get room
 				connections := rooms[connection.room]
 				role := provideRole(connections)
 
 				if connections == nil {
-					// Create room
 					connections = make(map[Subscription]*Client)
 					rooms[connection.room] = connections
 
-					// Set initial state
 					state[connection.room] = &StatefulRoom{
 						State: "WAITING",
 					}
@@ -44,62 +43,77 @@ func (h* Hub) Run() {
 				}
 
 				clients := getClients(rooms, connection.room)
-				e := writeTypedResponse("update", clients)
+				e := createTypedResponse("update", clients)
 
 				// Send new subs around.
 				for c := range connections {
-					c.connection.WriteMessage(websocket.TextMessage, []byte(e))
-					c.connection.Close()
+					writeToClient(c.connection, e)
 				}
 
 			case message := <-status:
-				connections := rooms[message.Room]
+				connections := rooms[message.Sub.room]
 
-				e := writeTypedResponse("status", State{message.State.Status})
+				e := createTypedResponse("status", State{message.State.Status})
 
 				for c := range connections {
-					if err := c.connection.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
-						s := Subscription{c.connection, c.connection.Params("room")}
-						unregister <- s
-						
-						c.connection.WriteMessage(websocket.CloseMessage, []byte{})
-						c.connection.Close()
+					if err := writeToClient(c.connection, e); err != nil {
+						terminateClient(c.connection)
 					}
 				}
 
 			case message := <-broadcast:
-				connections := rooms[message.Room]
+				connections := rooms[message.Sub.room]
 
-				e := writeTypedResponse("message", Payload{
+				e := createTypedResponse("message", Payload{
 					From: message.Data.From,
 					Message: message.Data.Message,
 				})
 
 				for c := range connections {
-					if err := c.connection.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
-						s := Subscription{c.connection, c.connection.Params("room")}
-						unregister <- s
-
-						c.connection.WriteMessage(websocket.CloseMessage, []byte{})
-						c.connection.Close()
+					if err := writeToClient(c.connection, e); err != nil {
+						terminateClient(c.connection)
 					}
 				}
 
+			case v := <-vote:
+				client := rooms[v.Sub.room][*v.Sub]
+				ticket := &Vote{
+					Motivation: v.Data.Motivation,
+					For: v.Data.For,
+					From: client,
+				}
+
+				vs := votes[v.Sub.room]
+				if vs == nil {
+					vs = make(map[Subscription]*Vote)
+					votes[v.Sub.room] = vs
+				} 
+
+				votes[v.Sub.room][*v.Sub] = ticket
+
+				vts := getVotes(votes, v.Sub.room)
+				e := createTypedResponse("vote", vts)
+
+				// Send vote around.
+				connections := rooms[v.Sub.room]
+				for c := range connections {
+					writeToClient(c.connection, e)
+				}
+
 			case update := <-update:
-				user := rooms[update.Room][*update.Sub]
-				rooms[update.Room][*update.Sub] = &Client{
+				user := rooms[update.Sub.room][*update.Sub]
+				rooms[update.Sub.room][*update.Sub] = &Client{
 					Name: update.Data.Name,
 					UUID: user.UUID,
 				}
 
-				clients := getClients(rooms, update.Room)
-				e := writeTypedResponse("update", clients)
+				clients := getClients(rooms, update.Sub.room)
+				e := createTypedResponse("update", clients)
 
 				// Send new subs around.
-				connections := rooms[update.Room]
+				connections := rooms[update.Sub.room]
 				for c := range connections {
-					c.connection.WriteMessage(websocket.TextMessage, []byte(e))
-					c.connection.Close()
+					writeToClient(c.connection, e)
 				}
 
 			case subscription := <-unregister:
@@ -109,7 +123,7 @@ func (h* Hub) Run() {
 						delete(connections, subscription)
 
 						clients := getClients(rooms, subscription.room)
-						e := writeTypedResponse("update", clients)
+						e := createTypedResponse("update", clients)
 
 						// Notify other users of abscense.
 						for c := range connections {

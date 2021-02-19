@@ -37,7 +37,7 @@ type Payload struct {
 type Message struct {
 	Type 					string `json:"type" validate:"required"`
 	Data 					Payload
-	Room 					string `json:"room"`
+	Sub						*Subscription
 }
 
 // State is the Status payload
@@ -49,7 +49,7 @@ type State struct {
 type Status struct {
 	Type 					string `json:"type" validate:"required"`
 	State 				State
-	Room 					string `json:"room"`
+	Sub						*Subscription
 }
 
 // Details to perform.
@@ -61,7 +61,6 @@ type Details struct {
 type Update struct {
 	Type 					string `json:"type" validate:"required"`
 	Data 					Details
-	Room 					string `json:"room"`
 	Sub						*Subscription
 }
 
@@ -96,7 +95,22 @@ type StatefulRoom struct {
 	State					string `json:"state"`
 }
 
+// Initial state of a room
 type Initial struct {
 	State					StatefulRoom 
 	Clients				[]*Client
+}
+
+// Vote for voting.
+type Vote struct {
+	From					*Client
+	For						string `json:"for"`
+	Motivation		string `json:"motivation"`
+}
+
+// CastVote that is cast.
+type CastVote struct {
+	Type 					string `json:"type" validate:"required"`
+	Data 					Vote
+	Sub						*Subscription
 }
