@@ -2,7 +2,7 @@
   import { meta } from "tinro";
   import { onMount } from "svelte";
   import store from "../stores/websocket";
-  import { Modal, State, Button, Panel } from "../components";
+  import { Modal, State, Button, Panel, ListItem } from "../components";
   import type { Status } from "../stores/websocket";
   import iam from "../stores/iam";
 
@@ -198,13 +198,7 @@
     </ol>
     <div class="w-full flex flex-col space-y-1">
       {#each users as user}
-        <div
-          class="p-4 dark:bg-white bg-opacity-10 text-gray-800 dark:text-white rounded-md"
-        >
-          <p class={style.body}>
-            {user.name}
-          </p>
-        </div>
+        <ListItem {status} {user} />
       {/each}
     </div>
   </div>

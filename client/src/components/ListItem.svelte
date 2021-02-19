@@ -1,8 +1,21 @@
-<script>
+<script lang="ts">
+  export let status: any;
+  export let user: any;
+
+  const handle = () => console.log(user.name);
+
   const style = {
-    button:
-      "bg-gray-800 text-white dark:text-gray-800 dark:bg-white px-6 py-2 text-xs antialiased font-medium rounded-md whitespace-nowrap",
+    wrapper:
+      "p-4 dark:bg-white bg-opacity-10 text-gray-800 dark:text-white rounded-md",
+    text: "antialiased text-xs",
   };
 </script>
 
-<button on:click on:submit class={style.button}> <slot /> </button>
+<div on:click={handle} class={style.wrapper}>
+  <p class={style.text}>
+    {user.name}
+    {#if status === "VOTING"}
+      (vote)
+    {/if}
+  </p>
+</div>

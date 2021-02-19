@@ -1,9 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 )
@@ -27,14 +24,7 @@ func (h* Hub) Run() {
 			case connection := <-register:
 				// Get room
 				connections := rooms[connection.room]
-				
-				// IAM
-				var role Role
-				if connections == nil {
-					role = Admin
-				} else {
-					role = User
-				}
+				role := provideRole(connections)
 
 				if connections == nil {
 					// Create room
@@ -53,48 +43,21 @@ func (h* Hub) Run() {
 					Role: Role(role),
 				}
 
-				clients := []*Client{}
-				for _, client := range rooms[connection.room] {
-					clients = append(clients, client)
-				}
+				clients := getClients(rooms, connection.room)
+				e := writeTypedResponse("update", clients)
 
 				// Send new subs around.
 				for c := range connections {
-					clients := []*Client{}
-					for _, client := range rooms[connection.room] {
-						clients = append(clients, client)
-					}
-
-					payload := &ReponseWithType{
-						Type: "update",
-						Data: clients,
-					}
-
-					e, err := json.Marshal(payload)
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-
 					c.connection.WriteMessage(websocket.TextMessage, []byte(e))
 					c.connection.Close()
 				}
 
 			case message := <-status:
 				connections := rooms[message.Room]
+
+				e := writeTypedResponse("status", State{message.State.Status})
+
 				for c := range connections {
-					payload := &ReponseWithType{
-						Type: "status",
-						Data: State{message.State.Status},
-					}
-
-					e, err := json.Marshal(payload)
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-
-					// Send to clients.
 					if err := c.connection.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
 						s := Subscription{c.connection, c.connection.Params("room")}
 						unregister <- s
@@ -106,24 +69,13 @@ func (h* Hub) Run() {
 
 			case message := <-broadcast:
 				connections := rooms[message.Room]
+
+				e := writeTypedResponse("message", Payload{
+					From: message.Data.From,
+					Message: message.Data.Message,
+				})
+
 				for c := range connections {
-				// TODO: Write method to handle marhsaling and typing. 
-				// !! Too much WET. Not enough DRY.
-					payload := &ReponseWithType{
-						Type: "message",
-						Data: Payload{
-							From: message.Data.From,
-							Message: message.Data.Message,
-						},
-					}
-
-					e, err := json.Marshal(payload)
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-
-					// Send to clients.
 					if err := c.connection.WriteMessage(websocket.TextMessage, []byte(e)); err != nil {
 						s := Subscription{c.connection, c.connection.Params("room")}
 						unregister <- s
@@ -140,25 +92,12 @@ func (h* Hub) Run() {
 					UUID: user.UUID,
 				}
 
+				clients := getClients(rooms, update.Room)
+				e := writeTypedResponse("update", clients)
+
 				// Send new subs around.
 				connections := rooms[update.Room]
 				for c := range connections {
-					clients := []*Client{}
-					for _, client := range rooms[update.Room] {
-						clients = append(clients, client)
-					}
-
-					payload := &ReponseWithType{
-						Type: "update",
-						Data: clients,
-					}
-
-					e, err := json.Marshal(payload)
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-
 					c.connection.WriteMessage(websocket.TextMessage, []byte(e))
 					c.connection.Close()
 				}
@@ -169,24 +108,11 @@ func (h* Hub) Run() {
 					if _, ok := connections[subscription]; ok {
 						delete(connections, subscription)
 
+						clients := getClients(rooms, subscription.room)
+						e := writeTypedResponse("update", clients)
+
 						// Notify other users of abscense.
 						for c := range connections {
-							clients := []*Client{}
-							for _, client := range rooms[subscription.room] {
-								clients = append(clients, client)
-							}
-
-							payload := &ReponseWithType{
-								Type: "update",
-								Data: clients,
-							}
-
-							e, err := json.Marshal(payload)
-							if err != nil {
-								fmt.Println(err)
-								return
-							}
-
 							c.connection.WriteMessage(websocket.TextMessage, []byte(e))
 							c.connection.Close()
 						}
