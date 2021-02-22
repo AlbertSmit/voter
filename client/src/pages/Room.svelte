@@ -85,19 +85,25 @@
     users = data;
   });
 
-  function onSendMessage(): void {
-    if (message.length > 0) {
-      store.sendMessage(name, message);
-      message = "";
-    }
-  }
+  type Payload = {
+    motivation: string;
+    from: User;
+    for: User;
+  };
+
+  // function onSendMessage(): void {
+  //   if (message.length > 0) {
+  //     store.sendMessage(name, message);
+  //     message = "";
+  //   }
+  // }
 
   function onCastVote(user: {
     uuid: string;
     name: string;
     role?: number;
   }): void {
-    store.vote(user.uuid);
+    store.vote(user);
   }
 
   function promptForName(): void {

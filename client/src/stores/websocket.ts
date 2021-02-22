@@ -4,6 +4,7 @@ export type Status = "WAITING" | "VOTING" | "PRESENTING";
 const statusStore = writable<string>("");
 const messageStore = writable<string>("");
 const userStore = writable<string>("");
+const voteStore = writable<string>("");
 
 const d = `localhost:1323`;
 const p = `votevotevotevote.herokuapp.com`;
@@ -34,7 +35,7 @@ const setSocket = (room: string = "default") => {
           userStore.update(() => event.data);
           break;
         case "vote":
-          console.log("vote", event.data);
+          voteStore.update(() => event.data);
           break;
         default:
           break;
@@ -67,13 +68,13 @@ const sendMessage = (from: string = "default", msg: any): void => {
   }
 };
 
-const vote = (id: string = "default"): void => {
+const vote = (user: { uuid: string; name: string; role?: number }): void => {
   if (socket.readyState === 1) {
     socket.send(
       JSON.stringify({
         type: "vote",
         data: {
-          for: id,
+          for: user,
           motivation: "hey",
         },
       })
@@ -112,6 +113,7 @@ export default {
   subscribe: messageStore.subscribe,
   status: statusStore.subscribe,
   users: userStore.subscribe,
+  votes: voteStore.subscribe,
   vote,
   sendMessage,
   updateUser,

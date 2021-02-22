@@ -104,7 +104,7 @@ type Initial struct {
 // Vote for voting.
 type Vote struct {
 	From					*Client
-	For						string `json:"for"`
+	For						*Client `json:"for"`
 	Motivation		string `json:"motivation"`
 }
 

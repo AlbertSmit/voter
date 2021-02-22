@@ -23,6 +23,9 @@ var (
 func (h* Hub) Run() {
 	for {
 		select {
+			/* 
+				On register, run this.
+			*/
 			case connection := <-register:
 				connections := rooms[connection.room]
 				role := provideRole(connections)
@@ -50,6 +53,10 @@ func (h* Hub) Run() {
 					writeToClient(c.connection, e)
 				}
 
+				
+			/* 
+				On status, run this.
+			*/
 			case message := <-status:
 				connections := rooms[message.Sub.room]
 
@@ -61,6 +68,10 @@ func (h* Hub) Run() {
 					}
 				}
 
+				
+			/* 
+				On message, run this.
+			*/
 			case message := <-broadcast:
 				connections := rooms[message.Sub.room]
 
@@ -75,6 +86,10 @@ func (h* Hub) Run() {
 					}
 				}
 
+
+			/* 
+				On vote, run this.
+			*/
 			case v := <-vote:
 				client := rooms[v.Sub.room][*v.Sub]
 				ticket := &Vote{
@@ -100,6 +115,10 @@ func (h* Hub) Run() {
 					writeToClient(c.connection, e)
 				}
 
+
+			/* 
+				On update, run this.
+			*/
 			case update := <-update:
 				user := rooms[update.Sub.room][*update.Sub]
 				rooms[update.Sub.room][*update.Sub] = &Client{
@@ -116,6 +135,10 @@ func (h* Hub) Run() {
 					writeToClient(c.connection, e)
 				}
 
+
+			/* 
+				On unregister, run this.
+			*/
 			case subscription := <-unregister:
 				connections := rooms[subscription.room]
 				if connections != nil {
