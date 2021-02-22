@@ -1,11 +1,15 @@
 import { writable } from "svelte/store";
+import iam from "./iam";
 
+// Stores
 export type Status = "WAITING" | "VOTING" | "PRESENTING";
 const statusStore = writable<string>("");
 const messageStore = writable<string>("");
+const controlStore = writable<string>("");
 const userStore = writable<string>("");
 const voteStore = writable<string>("");
 
+// Connect URI
 const d = `localhost:1323`;
 const p = `votevotevotevote.herokuapp.com`;
 const { protocol } = window.location;
@@ -15,6 +19,7 @@ const socketUri = `${l}://${
   import.meta.env.MODE === "development" ? d : p
 }/api/socket`;
 
+// Sockets
 let socket: WebSocket;
 const setSocket = (room: string = "default") => {
   if (socket) return;
@@ -33,6 +38,9 @@ const setSocket = (room: string = "default") => {
           break;
         case "update":
           userStore.update(() => event.data);
+          break;
+        case "control":
+          controlStore.update(() => event.data);
           break;
         case "vote":
           voteStore.update(() => event.data);
@@ -54,41 +62,43 @@ const setSocket = (room: string = "default") => {
   };
 };
 
-const sendMessage = (from: string = "default", msg: any): void => {
-  if (socket.readyState === 1) {
-    socket.send(
-      JSON.stringify({
-        type: "message",
-        data: {
-          message: msg,
-          from,
-        },
-      })
-    );
-  }
-};
-
-const vote = (user: { uuid: string; name: string; role?: number }): void => {
+const vote = (
+  user: { uuid: string; name: string; role?: number },
+  motivation: string
+): void => {
   if (socket.readyState === 1) {
     socket.send(
       JSON.stringify({
         type: "vote",
         data: {
           for: user,
-          motivation: "hey",
+          motivation,
         },
       })
     );
   }
 };
 
-const updateUser = (name: any = "default"): void => {
+const updateUser = (name: string = "default"): void => {
   if (socket.readyState === 1) {
     socket.send(
       JSON.stringify({
         type: "update",
         data: {
           name,
+        },
+      })
+    );
+  }
+};
+
+const controlRoom = (pointer: number = 0): void => {
+  if (socket.readyState === 1) {
+    socket.send(
+      JSON.stringify({
+        type: "control",
+        data: {
+          pointer,
         },
       })
     );
@@ -111,11 +121,12 @@ const changeRoomStatus = (status: Status = "WAITING") => {
 export default {
   setSocket,
   subscribe: messageStore.subscribe,
+  control: controlStore.subscribe,
   status: statusStore.subscribe,
   users: userStore.subscribe,
   votes: voteStore.subscribe,
   vote,
-  sendMessage,
   updateUser,
+  controlRoom,
   changeRoomStatus,
 };

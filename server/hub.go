@@ -14,6 +14,7 @@ var (
 	unregister 		= make(chan Subscription)
 	
 	broadcast 		= make(chan Message)
+	control				= make(chan Control)
 	status				= make(chan Status)
 	update				= make(chan Update)
 	vote					= make(chan CastVote)
@@ -44,6 +45,10 @@ func (h* Hub) Run() {
 					UUID: uuid.NewString(), 					
 					Role: Role(role),
 				}
+
+				// Send out state
+				a := createTypedResponse("status", state[connection.room])
+				writeWithoutTermination(connection.connection, a)
 
 				clients := getClients(rooms, connection.room)
 				e := createTypedResponse("update", clients)
@@ -91,6 +96,10 @@ func (h* Hub) Run() {
 				On vote, run this.
 			*/
 			case v := <-vote:
+				// if state[v.Sub.room].State != "VOTING" {
+				// 	break
+				// }
+
 				client := rooms[v.Sub.room][*v.Sub]
 				ticket := &Vote{
 					Motivation: v.Data.Motivation,
@@ -131,6 +140,35 @@ func (h* Hub) Run() {
 
 				// Send new subs around.
 				connections := rooms[update.Sub.room]
+				for c := range connections {
+					writeToClient(c.connection, e)
+				}
+
+
+			/* 
+				On control, run this.
+			*/
+			case control := <-control:
+				/* 
+					Only admins allowed here. 
+					You shall not pass.
+					GTFO y'all.
+					Gotcha,
+				*/
+				if rooms[control.Sub.room][*control.Sub].Role != Admin {
+					control.Sub.connection.Close()
+				}
+
+				pointer := control.Data.Pointer
+				state[control.Sub.room].Pointer = pointer
+
+				connections := rooms[control.Sub.room]
+				e := createTypedResponse("control", StatefulRoom{
+					State: state[control.Sub.room].State,
+					Pointer: pointer,
+				})
+
+				// Send new pointer around.
 				for c := range connections {
 					writeToClient(c.connection, e)
 				}

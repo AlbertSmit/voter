@@ -90,6 +90,16 @@ func handleWebSocket(c *websocket.Conn) {
 				
 				vt.Sub = &s
 				vote <- vt
+
+			case "control":
+				var ctrl Control
+				err := mapstructure.Decode(result, &ctrl)
+				if err != nil {
+					return
+				}
+				
+				ctrl.Sub = &s
+				control <- ctrl
 			}
 		}
 }

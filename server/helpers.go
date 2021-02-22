@@ -56,6 +56,16 @@ func provideRole(connections map[Subscription]*Client) Role {
 }
 
 // write to clients
+func writeWithoutTermination(c *websocket.Conn, message []byte) error {
+	writeErr := c.WriteMessage(websocket.TextMessage, []byte(message))
+	if (writeErr != nil) {
+		return writeErr
+	}
+
+	return nil
+}
+
+// write to clients
 func writeToClient(c *websocket.Conn, message []byte) error {
 	writeErr := c.WriteMessage(websocket.TextMessage, []byte(message))
 	if (writeErr != nil) {

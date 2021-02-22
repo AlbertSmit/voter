@@ -93,6 +93,7 @@ func (r Role) String() string {
 // StatefulRoom holds room state.
 type StatefulRoom struct {
 	State					string `json:"state"`
+	Pointer				int `json:"pointer"`
 }
 
 // Initial state of a room
@@ -112,5 +113,17 @@ type Vote struct {
 type CastVote struct {
 	Type 					string `json:"type" validate:"required"`
 	Data 					Vote
+	Sub						*Subscription
+}
+
+// Command to give out
+type Command struct {
+	Pointer				int
+}
+
+// Control server
+type Control struct {
+	Type 					string `json:"type" validate:"required"`
+	Data 					Command
 	Sub						*Subscription
 }

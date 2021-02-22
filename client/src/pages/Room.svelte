@@ -85,25 +85,25 @@
     users = data;
   });
 
-  type Payload = {
-    motivation: string;
-    from: User;
-    for: User;
+  type StatefulRoom = {
+    status: string;
+    pointer: number;
   };
 
-  // function onSendMessage(): void {
-  //   if (message.length > 0) {
-  //     store.sendMessage(name, message);
-  //     message = "";
-  //   }
-  // }
+  let control: number = 0;
+  store.users((payload) => {
+    if (!payload) return;
+    const { data }: { data: StatefulRoom } = JSON.parse(payload);
+    control = data.pointer;
+  });
 
   function onCastVote(user: {
     uuid: string;
     name: string;
     role?: number;
   }): void {
-    store.vote(user);
+    const reason = prompt("What's your reasoning?", "He's a great dude!");
+    store.vote(user, reason || "");
   }
 
   function promptForName(): void {
@@ -125,6 +125,10 @@
 
   function setRoom(status: Status): void {
     void store.changeRoomStatus(status);
+  }
+
+  $: {
+    console.log();
   }
 </script>
 
@@ -216,15 +220,4 @@
       {/each}
     </div>
   </div>
-
-  <!-- <div class={style.chat}>
-    <input class={style.input} type="text" bind:value={message} />
-    <button
-      class={`bg-gray-800 text-white dark:text-gray-800 dark:bg-white ${style.button}`}
-      on:submit={onSendMessage}
-      on:click={onSendMessage}
-    >
-      Send Message
-    </button>
-  </div> -->
 </main>
