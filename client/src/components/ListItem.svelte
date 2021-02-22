@@ -21,19 +21,16 @@
     votes = data;
   });
 
-  // Stop whining compiler.
-  console.log(status);
-
   // Count the votes.
   $: count = votes.filter((vote) => vote.for.uuid === user.uuid).length;
   $: {
-    console.log(`${user.name} count: ${count}`);
+    console.log(`${user.name} vote count -> ${count}`);
   }
 
   const style = {
     wrapper:
       "p-4 dark:bg-white bg-opacity-10 text-gray-800 dark:text-white rounded-md",
-    text: "antialiased text-xs",
+    text: "antialiased text-xs flex justify-between",
   };
 </script>
 
@@ -41,8 +38,10 @@
   <p class={style.text}>
     {user.name}
 
-    <span>
-      {count}
-    </span>
+    {#if status === "VOTING"}
+      <span>
+        {count}
+      </span>
+    {/if}
   </p>
 </div>
