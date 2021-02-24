@@ -5,7 +5,7 @@
   const style = {
     wrapper: `${
       position === "right" ? "right-4" : "left-4"
-    } absolute space-x-2 bg-gray-800 text-white rounded-full flex items-center justify-center bottom-4 shadow-xl w-auto px-6 h-14`,
+    } absolute z-50 space-x-2 bg-gray-800 text-white rounded-full flex items-center justify-center bottom-4 shadow-xl w-auto px-6 h-14`,
   };
 </script>
 

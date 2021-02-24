@@ -219,11 +219,15 @@
   {/if}
 
   {#if status === "PRESENTING"}
-    <Modal>
-      <h1>{votes[control].for}</h1>
-      <h2>{votes[control].from}</h2>
-      <p>{votes[control].motivation}</p>
-    </Modal>
+    <div class="absolute h-screen w-screen inset-0 bg-gray-900 bg-opacity-70">
+      <div
+        class="bg-white absolute inset-1/4 py-6 px-10 rounded-md top-50 shadow-xl"
+      >
+        <h1>{votes[control]?.for}</h1>
+        <h2>{votes[control]?.from}</h2>
+        <p>{votes[control]?.motivation}</p>
+      </div>
+    </div>
   {/if}
 
   <div class={style.container}>
