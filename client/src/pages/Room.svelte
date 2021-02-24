@@ -218,7 +218,7 @@
     </Panel>
   {/if}
 
-  {#if !$iam && status === "PRESENTING"}
+  {#if status === "PRESENTING"}
     <Modal>
       <h1>{votes[control].for}</h1>
       <h2>{votes[control].from}</h2>
