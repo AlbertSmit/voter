@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 )
@@ -43,7 +45,7 @@ func (h* Hub) Run() {
 				// Add client to room
 				rooms[connection.room][connection] = &Client{
 					UUID: uuid.NewString(), 					
-					Role: Role(role),
+					Role: role,
 				}
 
 				// Send out state
@@ -96,10 +98,6 @@ func (h* Hub) Run() {
 				On vote, run this.
 			*/
 			case v := <-vote:
-				// if state[v.Sub.room].State != "VOTING" {
-				// 	break
-				// }
-
 				client := rooms[v.Sub.room][*v.Sub]
 				ticket := &Vote{
 					Motivation: v.Data.Motivation,
@@ -161,6 +159,7 @@ func (h* Hub) Run() {
 
 				pointer := control.Data.Pointer
 				state[control.Sub.room].Pointer = pointer
+				fmt.Println("Next pointer passed by admin:", pointer)
 
 				connections := rooms[control.Sub.room]
 				e := createTypedResponse("control", StatefulRoom{

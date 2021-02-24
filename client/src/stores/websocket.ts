@@ -1,5 +1,4 @@
 import { writable } from "svelte/store";
-import iam from "./iam";
 
 // Stores
 export type Status = "WAITING" | "VOTING" | "PRESENTING";

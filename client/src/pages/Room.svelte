@@ -25,9 +25,6 @@
     data: StatusBody;
   };
 
-  let modalIsOpen: boolean = false;
-
-  let message: string;
   let messages: MessageBody[] = [];
 
   const route = meta();
@@ -97,6 +94,20 @@
     control = data.pointer;
   });
 
+  // Votes
+  type Payload = {
+    motivation: string;
+    from: User;
+    for: User;
+  };
+
+  let votes: Payload[] = [];
+  store.votes((payload: string) => {
+    if (!payload) return;
+    const { data }: { data: Payload[] } = JSON.parse(payload);
+    votes = data;
+  });
+
   function onCastVote(user: {
     uuid: string;
     name: string;
@@ -145,12 +156,6 @@
     </div>
   {/if}
 
-  {#if modalIsOpen}
-    <Modal close={() => (modalIsOpen = false)}>
-      <h1>Hey!</h1>
-    </Modal>
-  {/if}
-
   <span class={style.span}>
     <div class="flex items-center flex-1">
       <h1 class={style.title}>v4te</h1>
@@ -177,7 +182,7 @@
   <State {status} />
 
   {#if $iam}
-    <Panel>
+    <Panel position="right">
       <p
         class={status !== "WAITING"
           ? "text-gray-500 antialiased"
@@ -203,6 +208,22 @@
         Present
       </p>
     </Panel>
+  {/if}
+
+  {#if $iam && status === "PRESENTING"}
+    <Panel position="left">
+      {#each votes as _, i}
+        <div on:click={() => store.controlRoom(i)}>{i + 1}</div>
+      {/each}
+    </Panel>
+  {/if}
+
+  {#if !$iam && status === "PRESENTING"}
+    <Modal>
+      <h1>{votes[control].for}</h1>
+      <h2>{votes[control].from}</h2>
+      <p>{votes[control].motivation}</p>
+    </Modal>
   {/if}
 
   <div class={style.container}>

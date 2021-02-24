@@ -1,9 +1,11 @@
 <script lang="ts">
+  export let position: "left" | "right";
   let open: boolean = false;
 
   const style = {
-    wrapper:
-      "absolute space-x-2 bg-gray-800 text-white rounded-full flex items-center justify-center right-4 bottom-4 shadow-xl w-auto px-6 h-14",
+    wrapper: `${
+      position === "right" ? "right-4" : "left-4"
+    } absolute space-x-2 bg-gray-800 text-white rounded-full flex items-center justify-center bottom-4 shadow-xl w-auto px-6 h-14`,
   };
 </script>
 
@@ -13,9 +15,7 @@
   on:mouseleave={() => (open = false)}
 >
   <svg
-    class={`mx-2 h-4 w-4 block text-white transition-all transform ${
-      open && "rotate-180"
-    }`}
+    class={`mx-2 h-4 w-4 block text-white`}
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 20 20"
     fill="currentColor"
