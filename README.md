@@ -1,6 +1,6 @@
 ## Experiment / Work in progress.
 
-Aiming for:
+Current stack:
 
-- Go (Echo) backend.
+- Go (Fiber) backend.
 - Svelte frontend w/ Snowpack.
