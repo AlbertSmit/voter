@@ -83,15 +83,15 @@
   });
 
   type StatefulRoom = {
-    status: string;
+    state: string;
     pointer: number;
   };
 
-  let control: number = 0;
-  store.users((payload) => {
+  let control: StatefulRoom;
+  store.control((payload) => {
     if (!payload) return;
     const { data }: { data: StatefulRoom } = JSON.parse(payload);
-    control = data.pointer;
+    control = data;
   });
 
   // Votes
@@ -139,7 +139,7 @@
   }
 
   $: {
-    console.log();
+    console.log("v", votes, "c", control);
   }
 </script>
 
@@ -218,14 +218,14 @@
     </Panel>
   {/if}
 
-  {#if status === "PRESENTING"}
+  {#if status === "PRESENTING" && control}
     <div class="absolute h-screen w-screen inset-0 bg-gray-900 bg-opacity-70">
       <div
         class="bg-white absolute inset-1/4 py-6 px-10 rounded-md top-50 shadow-xl"
       >
-        <h1>{votes[control]?.for}</h1>
-        <h2>{votes[control]?.from}</h2>
-        <p>{votes[control]?.motivation}</p>
+        <h1>{votes[control.pointer]?.for.name}</h1>
+        <h2>{votes[control.pointer]?.from.name}</h2>
+        <p>{votes[control.pointer]?.motivation}</p>
       </div>
     </div>
   {/if}
