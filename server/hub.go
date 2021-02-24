@@ -66,6 +66,10 @@ func (h* Hub) Run() {
 			*/
 			case message := <-status:
 				connections := rooms[message.Sub.room]
+				
+				state[message.Sub.room] = &StatefulRoom{
+					State: message.State.Status,
+				}
 
 				e := createTypedResponse("status", State{message.State.Status})
 
