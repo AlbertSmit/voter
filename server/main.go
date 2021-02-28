@@ -40,6 +40,12 @@ func (a *App) InitRouter() {
 	party := a.Fiber.Group("/api")
 	party.Get("/room", createNewRoom)
 
+	// '/admin' actions for CLI.
+	admin := party.Group("/admin")
+	admin.Get("/rooms", listAllRooms)
+	admin.Get("/users/:id", getAllUsersForRoom)
+	admin.Post("/kick", kickUserFromRoom)
+
 	// '/socket' route
 	ws := party.Group("/socket", upgradeToWebSocket)
 	ws.Get("/:room", 	websocket.New(func(c *websocket.Conn) {

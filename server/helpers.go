@@ -8,7 +8,17 @@ import (
 )
 
 // getClients maps over clients in a room.
-func getClients(rooms map[string]map[Subscription]*Client, room string ) []*Client {
+func listRooms(rooms map[string]map[Subscription]*Client) []string {
+	var rms []string
+	for key := range rooms {
+		rms = append(rms, key)
+	}
+
+	return rms
+}
+
+// getClients maps over clients in a room.
+func getClients(rooms map[string]map[Subscription]*Client, room string) []*Client {
 	var clients []*Client
 	for _, client := range rooms[room] {
 		clients = append(clients, client)
@@ -18,7 +28,7 @@ func getClients(rooms map[string]map[Subscription]*Client, room string ) []*Clie
 }
 
 // getVotes maps over votes.
-func getVotes(votes map[string]map[Subscription]*Vote, room string ) []*Vote {
+func getVotes(votes map[string]map[Subscription]*Vote, room string) []*Vote {
 	var vts []*Vote
 	for _, vote := range votes[room] {
 		vts = append(vts, vote)

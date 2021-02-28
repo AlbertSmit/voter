@@ -18,6 +18,32 @@ func createNewRoom(ctx *fiber.Ctx) error {
 	return nil
 }
 
+// listAllRooms to join.
+func listAllRooms(ctx *fiber.Ctx) error {
+	if (len(rooms) == 0) {
+		return fiber.ErrInternalServerError
+	}
+
+	ctx.JSON(listRooms(rooms))
+	return nil
+}
+
+// getAllUsersForRoom to join.
+func getAllUsersForRoom(ctx *fiber.Ctx) error {
+	r := rooms[ctx.Params("id")]
+	if (r == nil) {
+		return fiber.ErrInternalServerError
+	}
+
+	ctx.JSON(getClients(rooms, ctx.Params("id")))
+	return nil
+}
+
+// kickUserFromRoom to join.
+func kickUserFromRoom(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
 // When ANY to WS-endpoint.
 func upgradeToWebSocket(c *fiber.Ctx) error {
 	if websocket.IsWebSocketUpgrade(c) { 
