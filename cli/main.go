@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	spinner "github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/muesli/reflow/indent"
 	"github.com/muesli/termenv"
 )
 
@@ -18,10 +20,11 @@ const url = "https://api.mocki.io/v1/d201c428"
 
 type model struct {
 	rooms			[]string
-
+	
 	cursor		int
 	selected	int
-
+	
+	sub 			chan payloadMsg
 	spinner   spinner.Model
 	status 		int
 	err    		error
@@ -34,11 +37,7 @@ type errMsg struct{ error }
 func (e errMsg) Error() string { return e.Error() }
 
 func main() {
-	p := tea.NewProgram(model{
-		spinner: spinner.NewModel(),
-		selected: 0,
-		cursor: 0,
-	})
+	p := tea.NewProgram(initialModel())
 
 	termenv.ClearScreen()
 	p.EnterAltScreen()
@@ -48,21 +47,38 @@ func main() {
 	}
 }
 
+func initialModel() model {
+	s := spinner.NewModel()
+	s.Spinner = spinner.Dot
+	return model{
+		sub:     	make(chan payloadMsg),
+		spinner: 	s,
+		selected: 0,
+		cursor: 	0,
+	}
+}
+
 func (m model) Init() tea.Cmd {
-	return checkServer
+	return tea.Batch(
+		spinner.Tick,
+		listRooms(m.sub),
+		waitForFetch(m.sub),
+	)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+	// Make sure these keys always quit
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		k := msg.String()
+		if k == "q" || k == "esc" || k == "ctrl+c" {
+			return m, tea.Quit
+		}
+	}
 
+	switch msg := msg.(type) {
+	// Move this; see https://github.com/charmbracelet/bubbletea/blob/df0da429545895356259fecf23ea35fb9c938b61/examples/views/main.go#L265
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc":
-			fallthrough
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		case "r":
-			return m, checkServer
 		case "up", "k":
 			if m.cursor > 0 {
 					m.cursor--
@@ -81,9 +97,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
+
 	case payloadMsg:
 		m.rooms = []string(msg)
-		return m, nil
+		return m, waitForFetch(m.sub)
 
 	case statusMsg:
 		m.status = int(msg)
@@ -101,16 +118,79 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	p := termenv.ColorProfile()
 	var s string
 
-	// The header
+	if len(m.rooms) == 0 {
+		s = fetchingView(m)
+	} else if (m.selected != 0) {
+		s = roomView(m)
+	} else {
+		s = roomsView(m)
+	}
+
+	return indent.String("\n"+s+"\n\n", 2)
+}
+
+func fetchingView(m model) string {
+	var s string
 	if (len(m.rooms) == 0) {
 		s += fmt.Sprintf("\n %s Fetching URL: %v\n\n", m.spinner.View(), url)
 	} else {
 		s += fmt.Sprintf("%s", termenv.String("\nResults\n\n").Bold())
 	}
 
+	return s
+}
+
+// User expected from room.
+type User struct {
+	Name		string `json:"name"`
+	UUID		string `json:"uuid"`
+	role		int 
+}
+
+var users = "https://api.mocki.io/v1/aeeb90f6"
+
+func roomView(m model) string {
+	p := termenv.EnvColorProfile()
+	room := m.rooms[m.selected - 1]
+
+	var s string
+	e := fmt.Sprint(room)
+	s += fmt.Sprintf(
+		"Users in %s.\n\n", 
+		termenv.String(e).Bold())
+		
+	c := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	res, err := c.Get(users)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	users := make([]User, 0)
+	json.NewDecoder(res.Body).Decode(&users)
+
+	for i, user := range users {
+		cursor := " " 
+		if m.cursor == i {
+				cursor = "→" 
+		}
+
+		s += fmt.Sprintf(
+			"%s %v\n", 
+			termenv.String(cursor).Foreground(p.Color("#00FF00")), 
+			strings.Title(user.Name))
+	}
+
+	return s
+}
+
+func roomsView(m model) string {
+	p := termenv.EnvColorProfile()
+	
+	var s string
 	for i, choice := range m.rooms {
 		cursor := " " 
 		if m.cursor == i {
@@ -123,30 +203,30 @@ func (m model) View() string {
 			choice)
 	}
 
-	if (m.selected != 0) {
-		s += fmt.Sprintf("\nSelected: %v\n", m.selected)
-	}
-
-	// The footer
-	s += fmt.Sprintf(
-		"\nPress %s to refresh, %s to quit.\n", 
-		termenv.String("R").Foreground(p.Color("#E88388")), 
-		termenv.String("Q").Foreground(p.Color("#E88388")))
-
 	return s
 }
 
-func checkServer() tea.Msg {
-	c := &http.Client{
-		Timeout: 10 * time.Second,
+func waitForFetch(sub chan payloadMsg) tea.Cmd {
+	return func() tea.Msg {
+		return payloadMsg(<-sub)
 	}
-	res, err := c.Get(url)
-	if err != nil {
-		return errMsg{err}
+}
+
+func listRooms(sub chan payloadMsg) tea.Cmd {
+	return func() tea.Msg {
+		for {
+			c := &http.Client{
+				Timeout: 10 * time.Second,
+			}
+			res, err := c.Get(url)
+			if err != nil {
+				return errMsg{err}
+			}
+
+			y := make([]string, 0)
+			json.NewDecoder(res.Body).Decode(&y)
+
+			sub <- payloadMsg(y)
+		}
 	}
-
-	y := make([]string, 0)
-	json.NewDecoder(res.Body).Decode(&y)
-
-	return payloadMsg(y)
 }
