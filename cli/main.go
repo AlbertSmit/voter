@@ -16,22 +16,29 @@ import (
 	"github.com/muesli/termenv"
 )
 
-const url = "https://api.mocki.io/v1/d201c428"
+const (
+	url = 		"https://api.mocki.io/v1/d201c428"
+	users = 	"https://api.mocki.io/v1/aeeb90f6"
+)
 
 type model struct {
 	rooms			[]string
+	users			[]User
 	
-	cursor		int
+	cursor		map[string]int
 	selected	int
 	
-	sub 			chan payloadMsg
+	r 				chan roomChanMsg
+	u 				chan usersChanMsg
+
 	spinner   spinner.Model
 	status 		int
 	err    		error
 }
 
 type statusMsg int
-type payloadMsg []string
+type roomChanMsg []string
+type usersChanMsg []User
 type errMsg struct{ error }
 
 func (e errMsg) Error() string { return e.Error() }
@@ -51,18 +58,20 @@ func initialModel() model {
 	s := spinner.NewModel()
 	s.Spinner = spinner.Dot
 	return model{
-		sub:     	make(chan payloadMsg),
+		r:     		make(chan roomChanMsg),
+		u:     		make(chan usersChanMsg),
 		spinner: 	s,
 		selected: 0,
-		cursor: 	0,
+		cursor: 	make(map[string]int, 0),
 	}
 }
 
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		spinner.Tick,
-		listRooms(m.sub),
-		waitForFetch(m.sub),
+		listRooms(m.r),
+		waitForRooms(m.r),
+		waitForUsers(m.u),
 	)
 }
 
@@ -75,71 +84,100 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	switch msg := msg.(type) {
-	// Move this; see https://github.com/charmbracelet/bubbletea/blob/df0da429545895356259fecf23ea35fb9c938b61/examples/views/main.go#L265
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "up", "k":
-			if m.cursor > 0 {
-					m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.rooms)-1 {
-					m.cursor++
-			}
-		case "enter", " ":
-			m.selected = m.cursor + 1
-		default:
-			return m, nil
-		}
-
-	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
-
-	case payloadMsg:
-		m.rooms = []string(msg)
-		return m, waitForFetch(m.sub)
-
-	case statusMsg:
-		m.status = int(msg)
-		return m, tea.Quit
-
-	case errMsg:
-		m.err = msg
-		return m, nil
-
-	default:
-		return m, nil
+	// Room controls
+	if m.selected == 0 {
+		return controlRoom(msg, m)
 	}
 
+	// User controls
+	if m.selected != 0 {
+		return controlUsers(msg, m)
+	} 
+
+	return m, nil
+}
+
+// Update loop for the first view where you're choosing a room.
+func controlRoom(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "up", "k":
+				if m.cursor["rooms"] > 0 {
+						m.cursor["rooms"]--
+				}
+
+			case "down", "j":
+				if m.cursor["rooms"] < len(m.rooms)-1 {
+						m.cursor["rooms"]++
+				}
+
+			case "enter", " ":
+				m.selected = m.cursor["rooms"] + 1
+				return m, listUsers(m.u)
+
+			default:
+				return m, nil
+			}
+
+		case spinner.TickMsg:
+			var cmd tea.Cmd
+			m.spinner, cmd = m.spinner.Update(msg)
+			return m, cmd
+
+		case roomChanMsg:
+			m.rooms = []string(msg)
+			return m, waitForRooms(m.r)
+	}
+	
+	return m, nil
+}
+
+// Update loop for the second view where you're controlling users.
+func controlUsers(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "up", "k":
+				if m.cursor["users"] > 0 {
+						m.cursor["users"]--
+				}
+
+			case "down", "j":
+				if m.cursor["users"] < len(m.rooms)-1 {
+						m.cursor["users"]++
+				}
+
+			case "enter", " ":
+				m.selected = m.cursor["users"] + 1
+
+			default:
+				return m, nil
+			}
+
+		case spinner.TickMsg:
+			var cmd tea.Cmd
+			m.spinner, cmd = m.spinner.Update(msg)
+			return m, cmd
+
+		case usersChanMsg:
+			m.users = []User(msg)
+			return m, waitForUsers(m.u)
+	}
+	
 	return m, nil
 }
 
 func (m model) View() string {
 	var s string
 
-	if len(m.rooms) == 0 {
-		s = fetchingView(m)
-	} else if (m.selected != 0) {
+	if (m.selected != 0) {
 		s = roomView(m)
 	} else {
 		s = roomsView(m)
 	}
 
 	return indent.String("\n"+s+"\n\n", 2)
-}
-
-func fetchingView(m model) string {
-	var s string
-	if (len(m.rooms) == 0) {
-		s += fmt.Sprintf("\n %s Fetching URL: %v\n\n", m.spinner.View(), url)
-	} else {
-		s += fmt.Sprintf("%s", termenv.String("\nResults\n\n").Bold())
-	}
-
-	return s
 }
 
 // User expected from room.
@@ -149,32 +187,20 @@ type User struct {
 	role		int 
 }
 
-var users = "https://api.mocki.io/v1/aeeb90f6"
-
 func roomView(m model) string {
 	p := termenv.EnvColorProfile()
 	room := m.rooms[m.selected - 1]
 
 	var s string
-	e := fmt.Sprint(room)
-	s += fmt.Sprintf(
-		"Users in %s.\n\n", 
-		termenv.String(e).Bold())
-		
-	c := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	res, err := c.Get(users)
-	if err != nil {
-		log.Fatal(err)
+	if (len(m.users) == 0) {
+		s += fmt.Sprintf("\n %s Getting users\n\n", m.spinner.View())
+	} else {
+		s += fmt.Sprintf("\n%s %s\n\n", termenv.String("Users in").Bold(), termenv.String(room).Bold())
 	}
 
-	users := make([]User, 0)
-	json.NewDecoder(res.Body).Decode(&users)
-
-	for i, user := range users {
+	for i, user := range m.users {
 		cursor := " " 
-		if m.cursor == i {
+		if m.cursor["users"] == i {
 				cursor = "→" 
 		}
 
@@ -191,9 +217,15 @@ func roomsView(m model) string {
 	p := termenv.EnvColorProfile()
 	
 	var s string
+	if (len(m.rooms) == 0) {
+		s += fmt.Sprintf("\n %s Fetching URL: %v\n\n", m.spinner.View(), url)
+	} else {
+		s += fmt.Sprintf("%s", termenv.String("\nResults\n\n").Bold())
+	}
+
 	for i, choice := range m.rooms {
 		cursor := " " 
-		if m.cursor == i {
+		if m.cursor["rooms"] == i {
 				cursor = "→" 
 		}
 
@@ -206,13 +238,19 @@ func roomsView(m model) string {
 	return s
 }
 
-func waitForFetch(sub chan payloadMsg) tea.Cmd {
+func waitForRooms(r chan roomChanMsg) tea.Cmd {
 	return func() tea.Msg {
-		return payloadMsg(<-sub)
+		return roomChanMsg(<-r)
 	}
 }
 
-func listRooms(sub chan payloadMsg) tea.Cmd {
+func waitForUsers(u chan usersChanMsg) tea.Cmd {
+	return func() tea.Msg {
+		return usersChanMsg(<-u)
+	}
+}
+
+func listRooms(r chan roomChanMsg) tea.Cmd {
 	return func() tea.Msg {
 		for {
 			c := &http.Client{
@@ -226,7 +264,26 @@ func listRooms(sub chan payloadMsg) tea.Cmd {
 			y := make([]string, 0)
 			json.NewDecoder(res.Body).Decode(&y)
 
-			sub <- payloadMsg(y)
+			r <- roomChanMsg(y)
+		}
+	}
+}
+
+func listUsers(u chan usersChanMsg) tea.Cmd {
+	return func() tea.Msg {
+		for {
+			c := &http.Client{
+				Timeout: 10 * time.Second,
+			}
+			res, err := c.Get(users)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			users := make(usersChanMsg, 0)
+			json.NewDecoder(res.Body).Decode(&users)
+
+			u <- usersChanMsg(users)
 		}
 	}
 }
