@@ -1,10 +1,10 @@
-<script>
-  import { onMount } from "svelte";
+<script lang="ts">
+  import { infinity } from "../directives/infinity";
 
   const style = {
     wrapper:
-      "p-4 h-screen flex flex-col items-start mx-auto overflow-auto text-gray-800",
-    h1: "text-6xl antialiased font-light",
+      "p-4 h-screen w-full flex flex-col items-start mx-auto overflow-auto text-gray-800",
+    h1: "text-8xl w-full flex justify-between antialiased font-light",
   };
   const data = [
     "Albert",
@@ -19,49 +19,34 @@
     "Arend",
   ];
 
-  let wrapper;
-  let content;
-  let block;
-
-  const scroller = () => {
-    if (wrapper.scrollTop + wrapper.offsetHeight > content.offsetHeight) {
-      wrapper.scrollTop = block.offsetHeight - wrapper.offsetHeight;
-      console.log(wrapper.offsetHeight - block.offsetHeight);
-    }
+  let selected: number;
+  const select = (id: number) => {
+    selected = id;
   };
-
-  onMount(() => {
-    const x = document.getElementById("wrapper");
-    const y = document.getElementById("content");
-    const z = document.getElementById("block");
-
-    wrapper = x;
-    content = y;
-    block = z;
-    wrapper.addEventListener("scroll", scroller, false);
-  });
 </script>
 
-<div id="wrapper" class={style.wrapper}>
-  <div id="content">
+<div id="wrapper" use:infinity class={style.wrapper}>
+  <div id="content" class="w-full">
     <div id="block">
-      {#each data as name}
-        <h1 class={style.h1}>{name}</h1>
+      {#each data as name, index}
+        <h1 on:click={() => select(index)} class={style.h1}>
+          {name} <span class="opacity-10">{index}</span>
+        </h1>
       {/each}
     </div>
-    {#each data as name}
-      <h1 class={style.h1}>{name}</h1>
-    {/each}
-    {#each data as name}
-      <h1 class={style.h1}>{name}</h1>
-    {/each}
-    {#each data as name}
-      <h1 class={style.h1}>{name}</h1>
+    {#each data.concat(...data, ...data) as name, index}
+      <h1 on:click={() => select(data.length + index)} class={style.h1}>
+        {name} <span class="opacity-10">{data.length + index}</span>
+      </h1>
     {/each}
   </div>
 </div>
 
 <style>
+  #wrapper {
+    background: #ffa50047;
+  }
+
   #wrapper::-webkit-scrollbar {
     display: none;
   }

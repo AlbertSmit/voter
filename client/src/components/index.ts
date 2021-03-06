@@ -4,5 +4,6 @@ import ListItem from "./ListItem.svelte";
 import Modal from "./Modal.svelte";
 import State from "./State.svelte";
 import Panel from "./Panel.svelte";
+import Logo from "./Logo.svelte";
 
-export { Button, Input, ListItem, Modal, State, Panel };
+export { Logo, Button, Input, ListItem, Modal, State, Panel };

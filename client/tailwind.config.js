@@ -4,7 +4,11 @@ module.exports = {
   },
   darkMode: "media",
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        sand: "#ffa50047",
+      },
+    },
   },
   variants: {
     extend: {},

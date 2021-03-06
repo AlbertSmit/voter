@@ -1,12 +1,11 @@
 <script lang="ts">
+  import Logo from "../components/Logo.svelte";
   import { router } from "tinro";
   import iam from "../stores/iam";
 
   const style = {
     wrapper:
-      "p-4 w-full h-screen flex flex-col items-center justify-center mx-auto my-auto bg-white dark:bg-gray-900",
-    title:
-      "text-3xl antialiased font-bold tracking-tight text-gray-800 dark:text-white",
+      "p-4 w-full h-screen flex flex-col items-center justify-center mx-auto my-auto bg-white dark:bg-sand",
     body: "antialiased text-xs",
     url: "text-blue-600",
     input:
@@ -35,7 +34,7 @@
 </script>
 
 <main class={style.wrapper}>
-  <h1 class={style.title}>v4te</h1>
+  <Logo />
   <hr />
 
   <button class={style.button} on:click={requestRoomGeneration}>

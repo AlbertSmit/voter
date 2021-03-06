@@ -2,7 +2,7 @@
   import { meta } from "tinro";
   import { onMount } from "svelte";
   import store from "../stores/websocket";
-  import { Modal, State, Button, Panel, ListItem } from "../components";
+  import { Logo, State, Button, Panel, ListItem } from "../components";
   import type { Status } from "../stores/websocket";
   import iam from "../stores/iam";
 
@@ -35,7 +35,7 @@
 
   const style = {
     wrapper:
-      "p-4 h-screen flex flex-col items-start justify-center mx-auto my-auto bg-white dark:bg-gray-900",
+      "p-4 h-screen flex flex-col items-start justify-center mx-auto my-auto bg-white dark:bg-sand",
     cloak:
       "z-50 inset-0 p-4 antialiased absolute dark:text-white bg-white dark:bg-gray-900",
     title:
@@ -158,7 +158,7 @@
 
   <span class={style.span}>
     <div class="flex items-center flex-1">
-      <h1 class={style.title}>v4te</h1>
+      <Logo />
       <svg
         class={style.icon}
         on:click={copyCode}
