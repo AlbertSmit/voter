@@ -1,30 +1,40 @@
 export function infinity(node: Node) {
-  let wrapper: HTMLElement | null;
-  let content: HTMLElement | null;
-  let block: HTMLElement | null;
+  let wrapper: HTMLElement | null = document.getElementById("wrapper");
+  let content: HTMLElement | null = document.getElementById("content");
+  let block: HTMLElement | null = document.getElementById("block");
 
-  // node.dispatchEvent(
-  //   new CustomEvent("panstart", {
-  //     detail: { x, y },
-  //   })
-  // );
-
-  const x: HTMLElement | null = document.getElementById("wrapper");
-  const y: HTMLElement | null = document.getElementById("content");
-  const z: HTMLElement | null = document.getElementById("block");
-
-  console.log(node);
-  wrapper = x;
-  content = y;
-  block = z;
-
+  /**
+   * Handle the scrolling event.
+   * Two different things going on:
+   *
+   * 1.   Scroll upwards
+   * 2.   Scroll downwards
+   */
   const handleScroll = (): void => {
+    // 1.
+    if (wrapper!.scrollTop === 0) {
+      wrapper!.scrollTop = content!.offsetHeight - block!.offsetHeight;
+    }
+
+    // 2.
     if (wrapper!.scrollTop + wrapper!.offsetHeight > content!.offsetHeight) {
       wrapper!.scrollTop = block!.offsetHeight - wrapper!.offsetHeight;
     }
   };
 
+  /**
+   * Listen for the
+   * scroll event.
+   */
   node.addEventListener("scroll", handleScroll);
+
+  /**
+   * Set scroll to 1px
+   * to trick browser
+   * to be able to
+   * scroll up.
+   */
+  wrapper!.scrollTop = 1;
 
   return {
     destroy() {

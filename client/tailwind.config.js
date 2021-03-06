@@ -6,7 +6,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        sand: "#ffa50047",
+        sand: "#EDDDCF",
+        spruce: "#1E6C59",
       },
     },
   },
