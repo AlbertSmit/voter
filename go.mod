@@ -18,4 +18,5 @@ require (
 	github.com/savsgio/gotils v0.0.0-20200616100644-13ff1fd2c28c // indirect
 	github.com/valyala/fasthttp v1.21.0 // indirect
 	golang.org/x/sys v0.0.0-20210217105451-b926d437f341 // indirect
+	golang.org/x/text v0.3.3
 )
