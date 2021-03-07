@@ -1,13 +1,12 @@
 <script lang="ts">
-  import Multiplier from "../components/Multiplier.svelte";
+  import { InfiniteScroll } from "../components";
   import { fly } from "svelte/transition";
-  import { infinity } from "../directives/infinity";
 
   const style = {
     wrapper:
-      "p-4 h-screen bg-spruce w-full flex flex-col items-start mx-auto overflow-auto text-gray-900",
-    h1: "text-8xl w-full flex justify-between antialiased font-light",
+      "h-screen bg-spruce w-full flex flex-col items-start mx-auto overflow-auto text-gray-900",
   };
+
   const data = [
     "Albert",
     "Geert",
@@ -40,7 +39,7 @@
   };
 </script>
 
-<div id="wrapper" use:infinity class={style.wrapper}>
+<div class={style.wrapper}>
   {#if selected != null}
     <div
       transition:fly={{ x: 50, duration: 250 }}
@@ -71,48 +70,5 @@
     </div>
   {/if}
 
-  <div id="content" class="w-full">
-    <div id="block">
-      {#each data as name, index}
-        <h1 on:click={() => select(index, 0)} class={style.h1}>
-          <span class="flex items-center">
-            <span>{name}</span>
-            <span
-              class="ml-6 mt-5 h-6 w-6 rounded-full bg-green-300 inline-block"
-            />
-          </span>
-          <span class="opacity-10">{index}</span>
-        </h1>
-      {/each}
-    </div>
-
-    <Multiplier times={3}>
-      {#each data as name, index}
-        <h1 on:click={() => select(index)} class={style.h1}>
-          <span class="flex items-center">
-            <span>{name}</span>
-            <span
-              class="ml-6 mt-5 h-6 w-6 rounded-full bg-green-300 inline-block"
-            />
-          </span>
-          <span class="opacity-10">{index}</span>
-        </h1>
-      {/each}
-    </Multiplier>
-  </div>
+  <InfiniteScroll {data} callback={(index) => select(index)} />
 </div>
-
-<style>
-  ::selection {
-    background: yellowgreen;
-  }
-
-  #wrapper::-webkit-scrollbar {
-    display: none;
-  }
-
-  #wrapper {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-</style>

@@ -8,6 +8,8 @@
 
 <div>
   {#each multiplier as _, index}
-    <slot />
+    <div id="block">
+      <slot />
+    </div>
   {/each}
 </div>
