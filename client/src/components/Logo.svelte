@@ -3,7 +3,7 @@
   height="70"
   viewBox="0 0 613 70"
   fill="none"
-  class="h-3 m-2"
+  class="w-auto h-3 m-2"
   xmlns="http://www.w3.org/2000/svg"
 >
   <path

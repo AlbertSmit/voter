@@ -6,6 +6,7 @@
   const style = {
     wrapper:
       "p-4 w-full h-screen flex flex-col items-center justify-center mx-auto my-auto bg-white dark:bg-sand",
+    header: "absolute top-0 inset-x-0 bg-white h-12 flex items-center",
     body: "antialiased text-xs",
     url: "text-blue-600",
     input:
@@ -34,8 +35,9 @@
 </script>
 
 <main class={style.wrapper}>
-  <Logo />
-  <hr />
+  <div class={style.header}>
+    <Logo />
+  </div>
 
   <button class={style.button} on:click={requestRoomGeneration}>
     Create Room
