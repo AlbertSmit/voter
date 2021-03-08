@@ -1,7 +1,7 @@
-export function infinity(node: Node) {
-  let wrapper: HTMLElement | null = document.getElementById("wrapper");
-  let content: HTMLElement | null = document.getElementById("content");
-  let block: HTMLElement | null = document.getElementById("block");
+export function infinity(node: HTMLElement) {
+  const w: HTMLElement | null = node;
+  const c: ChildNode | null = node.firstChild;
+  const b: ChildNode | null = node.firstChild!.firstChild;
 
   /**
    * Handle the scrolling event.
@@ -11,14 +11,18 @@ export function infinity(node: Node) {
    * 2.   Scroll downwards
    */
   const handleScroll = (): void => {
+    console.log("w", w.offsetHeight);
+    console.log("c", (c as HTMLElement).offsetHeight);
+    console.log("b", (b as HTMLElement).offsetHeight);
     // 1.
-    if (wrapper!.scrollTop === 0) {
-      wrapper!.scrollTop = content!.offsetHeight - block!.offsetHeight;
+    if (w.scrollTop < 1) {
+      w.scrollTop =
+        (c as HTMLElement).offsetHeight - (b as HTMLElement).offsetHeight;
     }
 
     // 2.
-    if (wrapper!.scrollTop + wrapper!.offsetHeight > content!.offsetHeight) {
-      wrapper!.scrollTop = block!.offsetHeight - wrapper!.offsetHeight;
+    if (w.scrollTop + w.offsetHeight > (c as HTMLElement).offsetHeight) {
+      w.scrollTop = (b as HTMLElement).offsetHeight - w.offsetHeight;
     }
   };
 
@@ -34,7 +38,7 @@ export function infinity(node: Node) {
    * to be able to
    * scroll up.
    */
-  wrapper!.scrollTop = 1;
+  w.scrollTop = 1;
 
   return {
     destroy() {

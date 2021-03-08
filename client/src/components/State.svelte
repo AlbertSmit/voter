@@ -1,6 +1,5 @@
 <script>
   export let status;
-  export let role;
 
   const style = {
     wrapper: "w-full gap-x-1 grid grid-cols-3 overflow-hidden rounded mb-2",

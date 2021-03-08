@@ -22,19 +22,6 @@
 
   let selected: number | null;
   const select = (id: number | null, block: number = 1): void => {
-    const w = document.getElementById("wrapper");
-    const b = document.getElementById("block");
-
-    const travel = b!.offsetHeight * block;
-    const split = b!.offsetHeight / data.length;
-    const amount = split * id!;
-
-    if (id != null)
-      (w as HTMLDivElement).scrollTo({
-        top: travel + amount,
-        behavior: "smooth",
-      });
-
     selected = id;
   };
 </script>
